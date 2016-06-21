@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Numerical Computation; Nagahara Masaaki</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <style id="style-1-cropbar-clipper">/* Copyright 2014 Evernote Corporation. All rights reserved. */
+  .en-markup-crop-options {
+    top: 18px !important;
+    left: 50% !important;
+    margin-left: -100px !important;
+    width: 200px !important;
+    border: 2px rgba(255,255,255,.38) solid !important;
+    border-radius: 4px !important;
+  }
+
+  .en-markup-crop-options div div:first-of-type {
+    margin-left: 0px !important;
+  }
+  </style>
+</head>
+<body>
+  <h1>数値計算ホームページ</h1>
+  <h4 align="right">
+    大阪大学基礎工学部<br>
+    木曜５限<br>
+    担当：永原正章<br>
+    <marquee bgcolor="#00cccc" loop="0">
+      <font color="#00cccf">.</font>
+    </marquee>
+  </h4>
+  <p>
+    <font color="red">
+      <b>[重要] 期末試験のお知らせ：</b><br>
+    </font>
+  </p>
+  <dl>
+    <font color="red">
+      <dt>８月２日（木）５限は期末試験です．</dt>
+      <dd>授業中の練習問題をしっかり復習しておいてください．</dd>
+    </font>
+  </dl>
+  <font color="red">
+  </font>
+  <h2>授業の目的</h2>
+  建築物の耐震解析や大気変動などのシミュレーション，株価変動の予測など，工学や自然科学，経済・社会科学のさまざまな場面で数値計算は重要な役割を果たします．この授業では，２分法や
+  Newton 法などに代表される反復法を基礎として，数値計算アルゴリズムとその収束性，誤差解析等について勉強します．
+  <h2>到達目標</h2>
+  <ol type="1">
+    <li>
+      世の中に多く存在する数値計算ソフトウェアを「ブラックボックス」と見るのではなく，その背後にあるアルゴリズムや収束性についての知識を得ることにより，出てきた答えの妥当性を議論できるようになる．
+    </li>
+    <li>
+      誤差についての解析法を知ることにより，例えば円周率を「３」として計算した結果の信頼性を見積ることができる．
+    </li>
+    <li>
+      先人たちが発見した秀逸な数値計算アルゴリズムの数々を学ぶことにより，新しいアイデアを生み出す力を身に付けることができる．
+    </li>
+  </ol>
+  <h2>講義テキスト</h2>
+  [PDF]ボタンを押して，テキストをダウンロードしてください．
+  <p>
+    <a href="assets/pdfs/nc_text.pdf">[PDF]</a><br>
+  </p>
+  <h2>期末試験について</h2>
+  <font color="red">
+    講義中に行った練習問題の類題/応用問題が数題出題されますので，
+    練習問題を復習しておいてください．
+  </font>
+  <p>
+    <a href="assets/pdfs/test2011.pdf">2011年度試験問題</a><br>
+  </p>
+  <h2>講義スライド</h2>
+  <dl>
+    <dt><a href="assets/pdfs/lecture1.pdf">第1回講義スライド</a></dt>
+    <dt><a href="assets/pdfs/lecture2.pdf">第2回講義スライド</a></dt>
+    <dt><a href="assets/pdfs/lecture3.pdf">第3回講義スライド</a></dt>
+    <dt><a href="assets/pdfs/lecture4.pdf">第4回講義スライド</a></dt>
+    <dd>
+      ・√a を求める反復法（ブロック線図表現）のSCILAB (XCOS)シミュレーション：<a href="assets/xcoses/newton_sqrt.xcos">newton_sqrt.xcos</a><br>
+    </dd>
+    <dd> ・Expression (u1+3/u1)/2 と書かれたブロックを開き，"3" を好きな数字に変えて実行してみよ．</dd>
+    <dd> ・上の3を-3にして実行してみよ</dd>
+    <dd> ・SCILAB のダウンロードは<a href="http://www.scilab.org/">こちら</a><br></dd>
+    <dt><a href="assets/pdfs/lecture5.pdf">第5回講義スライド</a><br></dt>
+    <dd>
+      ・非線形方程式を解くための反復法のSCILABプログラム
+      <a href="assets/sces/nonlinear_equation.sce">nonlinear_equation.sce</a><br>
+    </dd>
+    <dt><a href="assets/pdfs/lecture6.pdf">第6回講義スライド</a><br></dt>
+    <dt><a href="assets/pdfs/lecture7.pdf">第7回講義スライド</a><br></dt>
+    <dt><a href="assets/pdfs/lecture8.pdf">第8回講義スライド</a><br></dt>
+    <dt><a href="assets/pdfs/lecture9.pdf">第9回講義スライド</a><br></dt>
+    <dt><a href="assets/pdfs/lecture10.pdf">第10回講義スライド</a><br></dt>
+    <dd>
+      ・行列の固有値を求めるためのQR分解法のSCILABプログラム<a href="assets/sces/QReig.sce">QReig.sce</a><br>
+    </dd>
+    <dt>
+      <a href="assets/pdfs/lecture11.pdf">第11回講義スライド</a><br>
+      <a href="assets/pdfs/lecture12.pdf">第12回講義スライド</a><br>
+      <a href="assets/pdfs/lecture13.pdf">第13回講義スライド</a><br>
+      <a href="assets/pdfs/lecture14.pdf">第14回講義スライド</a><br>
+    </dt>
+  </dl>
+  <h2>講義内容</h2>
+  <ol type="1">
+    <li>厳密解と近似解，誤差について</li>
+    <li> 非線形方程式の反復解法と収束性
+      <ol type="i">
+        <li>反復法入門</li>
+        <li>非線形方程式の数値解法アルゴリズム（２分法，Newton 法など）</li>
+        <li>不動点定理による収束性の解析</li>
+      </ol>
+    </li>
+    <li>多変数方程式の反復解法と収束性
+      <ol type="i">
+        <li>多変数 Newton 法</li>
+        <li>不動点定理</li>
+        <li>線形連立方程式の数値解法アルゴリズム</li>
+      </ol>
+    </li>
+    <li>行列の固有値と特異値の数値計算</li>
+    <li>関数の補間と数値積分
+      <ol type="i">
+        <li>多項式補間</li>
+        <li>数値積分法</li>
+      </ol>
+    </li>
+    <li>逆問題の解法
+      <ol type="i">
+        <li>最小二乗法</li>
+        <li>正則化法</li>
+        <li>圧縮センシング入門</li>
+      </ol>
+    </li>
+  </ol>
+  以上の項目の順序で講義を進めますが，これは予定であり変更することもあり得ます．
+
+  <h2>参考文献</h2>
+  <ol type="1">
+    <li>森正武，<b>数値解析</b>， 第２版， 共立出版株式会社</li>
+    <li>杉原正顕, 室田一雄，<b>数値計算法の数理</b>， 岩波書店</li>
+    <li>山本哲朗， <b>数値解析入門（増訂版）</b>，サイエンス社</li>
+    <li>川田昌克， <b>Scilabで学ぶわかりやすい数値計算法</b>，森北出版</li>
+    <li>橋本洋志, 石井千春， <b>Scilab/Scicosで学ぶシミュレーションの基礎</b>，オーム社</li>
+    <li>増田久弥（編集），<b>応用解析ハンドブック</b>，シュプリンガー・ジャパン</li>
+    <li>コルモゴロフ,フォーミン， <b>函数解析の基礎 上・下</b>， 岩波書店</li>
+    <li>J.P. キーナー， <b>キーナー応用数学―変換論と近似論</b>，日本評論社</li>
+    <li>Francis Scheid, <b>Numerical Analysis</b>, McGraw-Hill</li>
+    <li>S. D. Conte and C. de Boor, <b>Elementary Numerical Analysis</b>, McGraw-Hill</li>
+    <li>E. Kreyszig, <b>Advanced Engineering Mathematics</b>, John Wiley &amp; Sons</li>
+    <li>M. Elad, <b>Sparse and Redundant Representations</b>, Springer</li>
+  </ol>
+  <h2>成績評価</h2>
+  数値計算法の基礎的な理解を筆記試験により確認します．<br>
+  また，授業では毎回小テストを行い，提出してもらいます（これは出席点として扱います）．<br>
+  筆記試験８０％，出席点２０％の配分で成績を評価します．<br>
+
+  <h2>オフィスアワー</h2>
+  質問等がある場合は，授業終了後，または下記のメールアドレスへメールを送ってください．<br>
+  nagahara(at)acs.i.kyoto-u.ac.jp
+
+  <h2>コメント</h2>
+  微分方程式の数値解法については「応用数理Ｄ」を受講してください．
+  <p>
+    <marquee bgcolor="#00cccc" loop="0"><font color="#00cccf">.</font></marquee>
+  </p>
+  <h2>更新履歴</h2>
+  <dl>
+    <dt>2012年7月27日（金）</dt>
+    <dd>2012年度第13回および第14回の講義スライドをアップロード</dd>
+    <dt>2012年7月20日（金）</dt>
+    <dd>2012年度第12回の講義スライドをアップロード</dd>
+    <dt>2012年7月6日（金）</dt>
+    <dd>2012年度第10回および第11回の講義スライドをアップロード</dd>
+    <dd>行列の固有値を求めるためのQR分解法のSCILABプログラムをアップロード</dd>
+    <dt>2012年6月29日（金）</dt>
+    <dd>2012年度第9回の講義スライドをアップロード</dd>
+    <dt>2012年6月8日（金）</dt>
+    <dd>2012年度第8回の講義スライドをアップロード</dd>
+    <dt>2012年6月1日（金）</dt>
+    <dd>2012年度第7回の講義スライドをアップロード</dd>
+    <dt>2012年5月25日（金）</dt>
+    <dd>2012年度第6回の講義スライドをアップロード</dd>
+    <dt>2012年5月18日（金）</dt>
+    <dd>2012年度第5回の講義スライドをアップロード</dd>
+    <dd>SCILAB のプログラム（非線形方程式を解くための反復法）をアップロード</dd>
+    <dt>2012年5月10日（木）</dt>
+    <dd>2012年度第4回の講義スライドをアップロード</dd>
+    <dd>SCILAB のプログラム（反復法のブロック線図）をアップロード</dd>
+    <dt>2012年4月27日（金）</dt>
+    <dd>2012年度第3回の講義スライドをアップロード</dd>
+    <dt>2012年4月20日（金）</dt>
+    <dd>2012年度第2回の講義スライドをアップロード</dd>
+    <dt>2012年4月13日（金）</dt>
+    <dd>2012年度第1回の講義スライドをアップロード</dd>
+    <dt>2012年1月20日（金）</dt>
+    <dd>2012年度講義内容を変更，参考文献を追加</dd>
+    <dt>2011年8月5日（金）</dt>
+    <dd>2011年度試験問題をアップロード</dd>
+    <dt>2011年7月28日（木）</dt>
+    <dd>第14回の講義スライドをアップロード</dd>
+    <dt>2011年7月21日（木）</dt>
+    <dd>第13回の講義スライドをアップロード</dd>
+    <dt>2011年7月14日（木）</dt>
+    <dd>第12回の講義スライドをアップロード</dd>
+    <dt>2011年7月7日（木）</dt>
+    <dd>第11回の講義スライドをアップロード</dd>
+    <dt>2011年6月30日（木）</dt>
+    <dd>第10回の講義スライドをアップロード</dd>
+    <dt>2011年6月24日（金）</dt>
+    <dd>第9回の講義スライドをアップロード</dd>
+    <dt>2011年6月16日（木）</dt>
+    <dd>第8回の講義スライドをアップロード</dd>
+    <dt>2011年6月10日（金）</dt>
+    <dd>第7回の講義スライドをアップロード</dd>
+    <dt>2011年6月2日（木）</dt>
+    <dd>第6回の講義スライドをアップロード</dd>
+    <dt>2011年5月26日（木）</dt>
+    <dd>第5回の講義スライドをアップロード</dd>
+    <dt>2011年4月28日（木）</dt>
+    <dd>第3回/第4回の講義スライドをアップロード</dd>
+    <dt>2011年4月22日（金）</dt>
+    <dd>第2回講義スライドをアップロード</dd>
+    <dt>2011年4月15日（金）</dt>
+    <dd>2011年度第1回講義スライドをアップロード</dd>
+    <dt>2011年4月13日（水）</dt>
+    <dd>講義テキスト2011年度版をアップロード．</dd>
+    <dt>2009年7月15日（水）</dt>
+    <dd>テキスト第8章のPDFファイルをアップロード．</dd>
+    <dt>2009年7月10日（金）</dt>
+    <dd>テキスト第7章のPDFファイルをアップロード．</dd>
+    <dt>2009年7月8日（水）</dt>
+    <dd>テキスト第6章のPDFファイルをアップロード．</dd>
+    <dt>2009年6月13日（土）</dt>
+    <dd>テキスト第5章のPDFファイルをアップロード．</dd>
+    <dt>2009年5月11日（月）</dt>
+    <dd>テキスト付録のPDFファイルをアップロード．</dd>
+    <dt>2009年4月28日（火）</dt>
+    <dd>テキスト第4章のPDFファイルをアップロード．</dd>
+    <dt>2009年4月8日（水）</dt>
+    <dd>テキスト第3章のPDFファイルをアップロード．</dd>
+    <dt>2009年3月27日（金）</dt>
+    <dd>テキスト第1章および第2章のPDFファイルをアップロード．</dd>
+    <dt>2009年2月17日（火）</dt>
+    <dd>ホームページ開設．</dd>
+  </dl>
+</body>
+</html>
