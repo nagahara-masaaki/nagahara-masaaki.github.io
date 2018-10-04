@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sparsity Methods in Systems and Control</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+  <style id="style-1-cropbar-clipper">/* Copyright 2014 Evernote Corporation. All rights reserved. */
+  .en-markup-crop-options {
+    top: 18px !important;
+    left: 50% !important;
+    margin-left: -100px !important;
+    width: 200px !important;
+    border: 2px rgba(255,255,255,.38) solid !important;
+    border-radius: 4px !important;
+  }
+  .en-markup-crop-options div div:first-of-type {
+    margin-left: 0px !important;
+  }
+  </style>
+</head>
+<body text="#003333" link="#000080" vlink="#808080" alink="#ff0000">
+
+  <h1>Sparsity Methods for Systems and Control (SC637@IIT Bombay)</h1>
+  <h3>MATLAB Codes</h3>
+  <b>MATLAB CVX</b><br>
+  <ul>
+    <li>For some programs for convex optimization, you need <b>CVX</b> toolbok. CVX can be downloaded from<br>
+        <a href="http://cvxr.com/cvx/">http://cvxr.com/cvx/</a></li>
+    <li>I have checked the following programs on MATLAB 2017b.</li>
+    <li>To run the programs in Chapter 3 (image denoising with total variation),
+    you need <b>image processing toolbox</b>.
+  </ul>
+  <b>Chapter 2 Curve Fitting and Sparse Optimization</b>
+  <ul>
+    <li> <a href="codes/chap2_curve_fitting_cvx.m">chap2_curve_fitting_cvx.m</a> (Numerical example in Section 2.3) </li>
+  </ul>
+  <b>第3章　凸最適化アルゴリズム</b>
+  <ul>
+    <li> <a href="codes/chap3_tv_denoising.m">chap3_tv_denoising.m</a>　（例題3.1 画像の全変動ノイズ除去）</li>
+    <li> <a href="codes/chap3_tv_denoising_ver2.m">chap3_tv_denoising_ver2.m</a> （上記の高速バージョン）</li>
+    <li> <a href="codes/lena.jpg">lena.jpg</a>　（処理画像）</li>
+    <li> <a href="codes/soft_thresholding.m">soft_thresholding.m</a>　（ソフトしきい値作用素）</li>
+  </ul>
+  <b>第4章　貪欲アルゴリズム</b>
+  <ul>
+    <li><a href="codes/MP.m">MP.m</a>　（マッチング追跡 MP）</li>
+    <li><a href="codes/OMP.m">OMP.m</a>　（直交マッチング追跡 OMP）</li>
+    <li><a href="codes/hard_thresholding.m">hard_thresholding.m</a>　（ハードしきい値作用素）</li>
+    <li><a href="codes/supp.m">supp.m</a>　（ベクトルの台）</li>
+    <li><a href="codes/IHT.m">IHT.m</a>　（反復ハードしきい値アルゴリズム IHT）</li>
+    <li><a href="codes/s_sparse_operator.m">s_sparse_operator.m</a>　（s-スパース作用素）</li>
+    <li><a href="codes/iterative_s_sparse.m">iterative_s_sparse.m</a>　（反復s-スパースアルゴリズム）</li>
+    <li><a href="codes/CoSaMP.m">CoSaMP.m</a> (CoSaMP) </li>
+    <li><a href="codes/chap4_curve_fitting_greedy.m">chap4_curve_fitting_greedy.m</a>　（4.4節の例題）</li>
+  </ul>
+  <b>第8章　動的スパースモデリングのための数値最適化</b>
+  <ul>
+    <li><a href="codes/chap8_sparse_control_cvx.m">chap8_sparse_control_cvx.m</a>　（CVXによる動的スパースモデリングの数値計算）</li>
+    <li><a href="codes/chap8_sparse_control_ADMM.m">chap8_sparse_control_ADMM.m</a>　（ADMMによる動的スパースモデリングの数値計算）</li>
+  </ul>
+</body>
+</html>
