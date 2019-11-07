@@ -37,7 +37,7 @@
   </ul>
   <b>Example</b><br>
 <code>
->ord = 64; %FIR filter order of the proposed filter<br>
+>ord = 64; %FIR filter order
 >Om = pi/32; %Cut-off frequency<br>
 >Hf=1.5; %H-infinity norm of NTF<br>
 >lam = 10; %Regularization parameter<br>
@@ -48,5 +48,12 @@
 By running the above codes, you get <code>ntf</code>,
 the transfer function of NTF,
 and <code>F</code>, the filter coefficient of F(z).
+</p>
+<p>
+  To see the filter coefficients, do
+</p>
+<code>
+  >figure; stem(F)
+</code>
 </body>
 </html>
