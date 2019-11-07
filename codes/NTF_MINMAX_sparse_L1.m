@@ -1,12 +1,12 @@
 function [ntf, Rf, gopt, diagn] = NTF_MINMAX_sparse_L1(lambda, order, Omega, H_inf, zf, threshold)
 
-% [ntf, Rf, gopt, diagn] = NTF_MINMAX_sparse_L1(lambda, order, OSR, H_inf, zf, threshold)
+% [ntf, Rf, gopt, diagn] = NTF_MINMAX_sparse_L1(lambda, order, Omega, H_inf, zf, threshold)
 %Synthesize a noise transfer function (NTF) for a lowpass or bandpass delta-sigma modulator
 %by min-max optimization.
 % Arguments:
 %   lambda: L1 regularization parameter
 %	order:  The order of NTF which is an FIR filter.
-%	omega:  Cut-off frequency
+%	Omega:  Cut-off frequency
 %	H_inf:  The maximum out-of-band gain of NTF.
 % 	zf:     The flag for assigning NTF zeros.
 %		If zf is 0, then the design is executed without zero assignment.
