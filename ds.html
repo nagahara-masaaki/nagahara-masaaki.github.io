@@ -1,0 +1,52 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sparse Modeling</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+  <style id="style-1-cropbar-clipper">/* Copyright 2014 Evernote Corporation. All rights reserved. */
+  .en-markup-crop-options {
+    top: 18px !important;
+    left: 50% !important;
+    margin-left: -100px !important;
+    width: 200px !important;
+    border: 2px rgba(255,255,255,.38) solid !important;
+    border-radius: 4px !important;
+  }
+  .en-markup-crop-options div div:first-of-type {
+    margin-left: 0px !important;
+  }
+  </style>
+</head>
+<body text="#003333" link="#000080" vlink="#808080" alink="#ff0000">
+
+  <h1>Sparse Representation of Feedback Filters in Delta-Sigma Modulators</h1>
+  <h3>MATLAB Codes</h3>
+  <b>Requirements</b><br>
+  <ul>
+    <li>You need to install YALMIP<br>
+    <a href="https://yalmip.github.io/">https://yalmip.github.io/</a><<br>
+    and SDPT3<br>
+    <a href="https://github.com/SQLP/SDPT3">https://github.com/SQLP/SDPT3</a><br>
+    <li>We checked the code on MATLAB 2017b.</li>
+  </ul>
+  <b>MATLAB function</b>
+  <ul>
+    <li><a href="codes/NTF_MINMAX_sparse_L1.m">NTF_MINMAX_sparse_L1.m</a>: main function
+  </ul>
+  <b>Example</b><br>
+<code>
+>ord = 64; %FIR filter order of the proposed filter<br>
+>Om = pi/32; %Cut-off frequency<br>
+>Hf=1.5; %H-infinity norm of NTF<br>
+>lam = 10; %Regularization parameter<br>
+>th = 1e-4; %Thresholding parameter<br>
+>[ntf, F] = NTF_MINMAX_sparse_L1(lam,ord,Om,Hf,1,th);<br>
+</code>
+<p>
+By running the above codes, you get <code>ntf</code>,
+the transfer function of NTF,
+and <code>F</code>, the filter coefficient of F(z).
+</body>
+</html>
