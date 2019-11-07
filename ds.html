@@ -33,7 +33,7 @@
   </ul>
   <b>MATLAB function</b>
   <ul>
-    <li><a href="codes/NTF_MINMAX_sparse_L1.m">NTF_MINMAX_sparse_L1.m</a>: main function
+    <li><a href="codes/NTF_sparse.m">NTF_sparse.m</a>: main function
   </ul>
   <b>Example</b><br>
 <code>
@@ -42,7 +42,7 @@
 >Hf=1.5; %H-infinity norm of NTF<br>
 >lam = 10; %Regularization parameter<br>
 >th = 1e-4; %Thresholding parameter<br>
->[ntf, F] = NTF_MINMAX_sparse_L1(lam,ord,Om,Hf,1,th);<br>
+>[ntf, F] = NTF_sparse(lam,ord,Om,Hf,1,th);<br>
 </code>
 <p>
 By running the above codes, you get <code>ntf</code>,
