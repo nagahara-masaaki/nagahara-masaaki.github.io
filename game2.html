@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>カービィの理科クイズ200</title>
+    <style>
+        body { font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif; background-color: #333; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; user-select: none; }
+        #game-container { position: relative; width: 800px; height: 500px; background: linear-gradient(#87CEEB 60%, #90EE90 60%); border: 8px solid #fff; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); overflow: hidden; text-align: center; transition: background 1s ease; }
+        h1 { color: #fff; text-shadow: 2px 2px 0 #FF69B4; margin-top: 15px; font-size: 28px; position: relative; z-index: 5; }
+        #score-board { position: absolute; top: 20px; right: 30px; background: rgba(255, 255, 255, 0.9); padding: 10px 20px; border-radius: 15px; font-size: 24px; font-weight: bold; color: #FF1493; border: 3px solid #FFB6C1; z-index: 5; }
+        .stage { position: absolute; bottom: 40px; width: 100%; height: 200px; display: flex; justify-content: space-around; align-items: flex-end; }
+        
+        /* キャラクターCSS (省略なし) */
+        .kirby { width: 100px; height: 90px; background: radial-gradient(circle at 30% 30%, #FFB7C5, #FF9EAA); box-shadow: inset -5px -5px 15px rgba(0,0,0,0.15), 2px 2px 5px rgba(0,0,0,0.2); border-radius: 50%; position: absolute; bottom: 50px; left: 80px; transition: transform 0.2s; z-index: 10; }
+        .kirby::before, .kirby::after { content: ''; position: absolute; top: 25px; width: 8px; height: 20px; background: #000; border-radius: 50%; box-shadow: inset 2px 2px 2px rgba(255,255,255,0.5); }
+        .kirby::before { left: 30px; } .kirby::after { right: 30px; }
+        .kirby .cheeks { position: absolute; top: 45px; width: 100%; }
+        .kirby .cheeks::before, .kirby .cheeks::after { content: ''; position: absolute; width: 15px; height: 8px; background: #FF69B4; border-radius: 50%; opacity: 0.5; filter: blur(2px); }
+        .kirby .cheeks::before { left: 15px; } .kirby .cheeks::after { right: 15px; }
+        .kirby .mouth { position: absolute; top: 55px; left: 45px; width: 10px; height: 10px; background: #990000; border-radius: 50%; box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5); }
+        .foot { position: absolute; bottom: -10px; width: 40px; height: 25px; background: radial-gradient(circle at 40% 40%, #D63545, #B22222); border-radius: 20px; z-index: -1; box-shadow: inset -3px -3px 5px rgba(0,0,0,0.2); }
+        .kirby .foot-l { left: 0; } .kirby .foot-r { right: 0; }
+        .kirby .candy { position: absolute; top: -20px; left: -10px; transform: rotate(-20deg); filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3)); }
+        .kirby .candy-stick { width: 6px; height: 40px; background: #f0f0f0; border-radius: 3px; position: absolute; top: 20px; left: 12px; }
+        .kirby .candy-head { width: 30px; height: 30px; background: radial-gradient(circle, #FF6347 20%, #FFD700 21%, #FFD700 40%, #FF6347 41%); border-radius: 50%; position: absolute; top: 0; left: 0; }
+        .kirby .bandaid { position: absolute; top: 50px; right: 10px; width: 25px; height: 10px; background: #FFC0CB; border-radius: 5px; transform: rotate(10deg); background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,20,147,0.3) 2px, rgba(255,20,147,0.3) 4px); box-shadow: 1px 1px 3px rgba(0,0,0,0.2); }
+        .kirby.jump { animation: jump-anim 0.5s ease; }
+        @keyframes jump-anim { 0% { bottom: 50px; transform: scale(1,1); } 50% { bottom: 150px; transform: scale(1.1, 0.9); } 100% { bottom: 50px; transform: scale(1,1); } }
+
+        .waddle { width: 90px; height: 80px; background: radial-gradient(circle at 70% 30%, #F4A460, #D2691E); box-shadow: inset 5px -5px 15px rgba(0,0,0,0.15), 2px 2px 5px rgba(0,0,0,0.2); border-radius: 50%; position: absolute; bottom: 50px; right: 80px; }
+        .waddle .face { position: absolute; top: 10px; left: 10px; width: 70px; height: 60px; background: radial-gradient(ellipse at center, #FFF8DC, #FFE4C4); border-radius: 50% 50% 40% 40%; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); }
+        .waddle .face::before, .waddle .face::after { content: ''; position: absolute; top: 20px; width: 6px; height: 15px; background: #000; border-radius: 50%; box-shadow: inset 1px 1px 2px rgba(255,255,255,0.6); }
+        .waddle .face::before { left: 20px; } .waddle .face::after { right: 20px; }
+        .waddle .foot { position: absolute; bottom: -8px; width: 30px; height: 20px; background: radial-gradient(circle at 40% 40%, #FFD700, #DAA520); border-radius: 20px; z-index: -1; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.2); }
+        .waddle .foot-l { left: 5px; } .waddle .foot-r { right: 5px; }
+        .waddle .heart-tag { position: absolute; top: -10px; left: -25px; width: 40px; height: 40px; transform: rotate(-30deg); filter: drop-shadow(3px 3px 3px rgba(0,0,0,0.3)); }
+        .waddle .heart-shape { position: relative; width: 100%; height: 100%; }
+        .waddle .heart-shape::before, .waddle .heart-shape::after { content: ""; position: absolute; top: 0; width: 24px; height: 36px; border-radius: 24px 24px 0 0; background: linear-gradient(to bottom right, #FF69B4, #FFD700, #87CEEB); }
+        .waddle .heart-shape::before { left: 24px; transform: rotate(-45deg); transform-origin: 0 100%; } .waddle .heart-shape::after { left: 0; transform: rotate(45deg); transform-origin: 100% 100%; }
+        .waddle .bandaid-blue { position: absolute; top: 45px; right: 15px; width: 22px; height: 9px; background: #ADD8E6; border-radius: 4px; transform: rotate(5deg); background-image: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,255,0.3) 3px, rgba(0,0,255,0.3) 6px); box-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+
+        /* UI調整 */
+        #question-board { 
+            position: absolute; bottom: 140px; right: 130px; width: 220px; height: auto; min-height: 80px;
+            background: white; padding: 15px; border: 4px solid #8B4513; border-radius: 10px;
+            font-size: 18px; font-weight: bold; color: #333; transform: rotate(-5deg); box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            display: flex; align-items: center; justify-content: center; text-align: center;
+        }
+        .answers-area { position: absolute; top: 60px; left: 0; right: 0; margin: auto; width: 700px; display: flex; justify-content: space-around; z-index: 5; }
+        .star-btn { 
+            width: 140px; height: 120px; 
+            background: #FFD700; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 16px; font-weight: bold; color: #D2691E; cursor: pointer; text-align: center;
+            transition: transform 0.2s; filter: drop-shadow(0 4px 0 #DAA520); position: relative; padding: 5px;
+        }
+        .star-btn:nth-child(1) { transform: rotate(-5deg); } .star-btn:nth-child(2) { transform: rotate(5deg); top: -20px; } .star-btn:nth-child(3) { transform: rotate(5deg); }
+        .star-btn:hover { transform: scale(1.1) rotate(0deg); z-index: 100; } .star-btn:active { transform: scale(0.9); }
+        #message { position: absolute; top: 220px; left: 0; width: 100%; text-align: center; font-size: 45px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); display: none; z-index: 100; }
+        .correct { color: #FF4500; } .wrong { color: #1E90FF; }
+        #start-screen, #reward-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: white; }
+        #reward-screen { background: rgba(255, 255, 255, 0.9); display: none; z-index: 300; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .reward-content { text-align: center; background: #fff; padding: 40px; border-radius: 30px; border: 8px solid #FFD700; box-shadow: 0 0 30px rgba(255, 215, 0, 0.5); }
+        .reward-emoji { font-size: 100px; margin: 20px 0; animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        button { padding: 15px 40px; font-size: 24px; background: #FF69B4; color: white; border: none; border-radius: 50px; cursor: pointer; border-bottom: 5px solid #C71585; margin-top: 20px; }
+        button:active { border-bottom: 2px solid #C71585; transform: translateY(3px); }
+    </style>
+</head>
+<body>
+<div id="game-container">
+    <h1>カービィの理科クイズ200</h1>
+    <div id="score-board">★ 0</div>
+    <div class="answers-area">
+        <div class="star-btn" id="ans0" onclick="checkAnswer(0)">?</div>
+        <div class="star-btn" id="ans1" onclick="checkAnswer(1)">?</div>
+        <div class="star-btn" id="ans2" onclick="checkAnswer(2)">?</div>
+    </div>
+    <div id="message"></div>
+    <div class="stage">
+        <div class="kirby" id="kirby">
+            <div class="candy"><div class="candy-head"></div><div class="candy-stick"></div></div>
+            <div class="cheeks"></div><div class="bandaid"></div><div class="mouth"></div>
+            <div class="foot foot-l"></div><div class="foot foot-r"></div>
+        </div>
+        <div class="waddle">
+            <div class="heart-tag"><div class="heart-shape"></div></div>
+            <div class="face"></div><div class="bandaid-blue"></div>
+            <div class="foot foot-l"></div><div class="foot foot-r"></div>
+        </div>
+        <div id="question-board">もんだい</div>
+    </div>
+    <div id="start-screen">
+        <h2>★ カービィと理科クイズ ★</h2>
+        <p>ぜんぶで 200もん！<br>めざせ りかマスター！</p>
+        <button onclick="startGame()">スタート！</button>
+    </div>
+    <div id="reward-screen">
+        <div class="reward-content">
+            <h2 id="reward-title">ごほうびゲット！</h2>
+            <div id="reward-icon" class="reward-emoji">🎁</div>
+            <p id="reward-text">やったね！</p>
+            <button onclick="closeReward()">つぎへ進む</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 200問の理科クイズデータ ---
+    const quizData = [
+        { q: "じしゃくに つくものは？", ans: ["てつ", "き", "プラスチック"] },
+        { q: "こんちゅうの あしは なんぼん？", ans: ["6ぽん", "4ほん", "8ぽん"] },
+        { q: "ひまわりが さく きせつは？", ans: ["なつ", "はる", "ふゆ"] },
+        { q: "たまごから うまれるのは？", ans: ["カエル", "イヌ", "ネコ"] },
+        { q: "でんきを とおすものは？", ans: ["10えんだま", "ゴム", "わりばし"] },
+        { q: "たいようは どっちから のぼる？", ans: ["ひがし", "にし", "きた"] },
+        { q: "あまがえるの こどもは？", ans: ["オタマジャクシ", "ヤゴ", "イモムシ"] },
+        { q: "モンシロチョウの ようちゅうは？", ans: ["アオムシ", "ケムシ", "ウジ"] },
+        { q: "いちばん ほしが ひかるのは？", ans: ["よる", "ひる", "あさ"] },
+        { q: "みずが こおりに なると？", ans: ["かたくなる", "あつくなる", "きえる"] },
+        { q: "さかなが いきをするのは？", ans: ["エラ", "ハナ", "クチ"] },
+        { q: "アサガオの タネの いろは？", ans: ["くろ", "あか", "きいろ"] },
+        { q: "カマキリが たべるのは？", ans: ["むし", "くさ", "どんぐり"] },
+        { q: "じしゃくの Nきょくと つくのは？", ans: ["Sきょく", "Nきょく", "どっちも"] },
+        { q: "かげが できるのは どっち？", ans: ["たいようの はんたい", "たいようの ほう", "まうえ"] },
+        { q: "クモの あしは なんぼん？", ans: ["8ぽん", "6ぽん", "10ぽん"] },
+        { q: "ダンゴムシは こんちゅう？", ans: ["ちがう", "そう", "はんぶんそう"] },
+        { q: "ツバメが くる きせつは？", ans: ["はる", "ふゆ", "あき"] },
+        { q: "つきの かたちは？", ans: ["かわる", "かわらない", "きえる"] },
+        { q: "みずが ふっとうする おんどは？", ans: ["100ど", "50ど", "0ど"] },
+        { q: "みずが こおる おんどは？", ans: ["0ど", "10ど", "100ど"] },
+        { q: "いちばん あかるい ほしは？", ans: ["シリウス", "ホッキョクセイ", "ベガ"] },
+        { q: "アゲハチョウの ようちゅうが たべるのは？", ans: ["ミカンのは", "キャベツ", "サクラ"] },
+        { q: "カブトムシが すきなのは？", ans: ["じゅえき", "はっぱ", "にく"] },
+        { q: "メダカの オスの ヒレは？", ans: ["ギザギザ", "まるい", "ない"] },
+        { q: "セミの ようちゅうが いるのは？", ans: ["つちのなか", "きのうえ", "みずのなか"] },
+        { q: "ホタルが ひかるのは なぜ？", ans: ["なかまを よぶ", "あついから", "ねむいから"] },
+        { q: "トマトは やさい？", ans: ["やさい", "くだもの", "にく"] },
+        { q: "ジャガイモは どこの ぶぶん？", ans: ["くき", "ねっこ", "み"] },
+        { q: "サツマイモは どこの ぶぶん？", ans: ["ねっこ", "くき", "はっぱ"] },
+        { q: "タマネギは どこの ぶぶん？", ans: ["はっぱ", "ねっこ", "み"] },
+        { q: "タンポポの タネは どうやって とぶ？", ans: ["かぜ", "みず", "とり"] },
+        { q: "オナモミの タネは どうやって はこばれる？", ans: ["どうぶつにつく", "かぜ", "はじける"] },
+        { q: "ホウセンカの タネは どうなる？", ans: ["はじける", "かぜでとぶ", "みずにながれる"] },
+        { q: "たいようの ひかりを あつめると？", ans: ["あたたかくなる", "つめたくなる", "くらくなる"] },
+        { q: "かがみは ひかりを？", ans: ["はねかえす", "すいこむ", "とおす"] },
+        { q: "むしめがねで たいようを みると？", ans: ["めが いたむ", "よくみえる", "なにもおきない"] },
+        { q: "かげの ながさが かわるのは？", ans: ["たいようの たかさ", "くもの かず", "かぜの つよさ"] },
+        { q: "いちばん かげが みじかいのは？", ans: ["おひる", "あさ", "ゆうがた"] },
+        { q: "かぜの つよさを はかるのは？", ans: ["ふうこうけい", "おんどけい", "うりょうけい"] },
+        { q: "あめが ふる こえは？", ans: ["ザーザー", "ピカピカ", "モクモク"] },
+        { q: "くもは なにで できている？", ans: ["みずのつぶ", "わたあめ", "けむり"] },
+        { q: "かみなりが なったら？", ans: ["たてものにはいる", "きのしたにいく", "はしる"] },
+        { q: "にじの いろは なんしょく？", ans: ["7しょく", "3しょく", "10しょく"] },
+        { q: "たいようの まわりを まわっているのは？", ans: ["ちきゅう", "つき", "ほし"] },
+        { q: "ちきゅうの まわりを まわっているのは？", ans: ["つき", "たいよう", "かせい"] },
+        { q: "オリオンざが みえる きせつは？", ans: ["ふゆ", "なつ", "あき"] },
+        { q: "なつの だいさんかくの ほしは？", ans: ["ベガ", "シリウス", "カノープス"] },
+        { q: "ほっきょくせいは うごく？", ans: ["ほとんどうごかない", "ぐるぐるまわる", "きえる"] },
+        { q: "じしゃくを 半分に きると？", ans: ["NとSができる", "Nだけになる", "じしゃくじゃなくなる"] },
+        { q: "さいてつは なにに つく？", ans: ["じしゃく", "プラスチック", "き"] },
+        { q: "ほういじしんの Nは どっちをむく？", ans: ["きた", "みなみ", "ひがし"] },
+        { q: "でんちの プラスと マイナスを つなぐと？", ans: ["ショートする", "ひかる", "おとがなる"] },
+        { q: "マメ電球を つけるには？", ans: ["わをつくる", "いっぽんでつなぐ", "はなす"] },
+        { q: "でんきを いちばん とおすのは？", ans: ["どう", "てつ", "アルミ"] },
+        { q: "ゴムは でんきを？", ans: ["とおさない", "とおす", "すこしとおす"] },
+        { q: "てこの げんりで おもいものを もつには？", ans: ["してんからとおく", "してんのちかく", "まんなか"] },
+        { q: "おもりを つるして バランスをとる 道具は？", ans: ["てんびん", "ビーカー", "フラスコ"] },
+        { q: "くうきを あたためると？", ans: ["ふくらむ", "ちぢむ", "かわらない"] },
+        { q: "くうきは おもさが ある？", ans: ["ある", "ない", "ときどきある"] },
+        { q: "みずに うくのは？", ans: ["き", "てつ", "いし"] },
+        { q: "いち円だまは みずに？", ans: ["うく", "しずむ", "とける"] },
+        { q: "しおを みずに いれると？", ans: ["とける", "かたまる", "いろがかわる"] },
+        { q: "サトウを みずに いれると？", ans: ["とける", "あわがでる", "こおる"] },
+        { q: "みずようえきを こす かみは？", ans: ["ろシー", "おりがみ", "ティッシュ"] },
+        { q: "アルコールランプの けし方は？", ans: ["フタをする", "いきをふく", "みずをかける"] },
+        { q: "ひとが いきで だすのは？", ans: ["にさんかたんそ", "さんそ", "ちっそ"] },
+        { q: "植物が だすのは？", ans: ["さんそ", "にさんかたんそ", "すいそ"] },
+        { q: "ロウソクが もえるのに ひつようなのは？", ans: ["さんそ", "ちっそ", "にさんかたんそ"] },
+        { q: "い胃は なにを する？", ans: ["たべものをとかす", "いきをする", "ちをおくる"] },
+        { q: "しんぞうは なにを する？", ans: ["ちをおくる", "いきをする", "かんがえる"] },
+        { q: "はいは なにを する？", ans: ["いきをする", "たべる", "はしる"] },
+        { q: "ほねと ほねの つなぎめは？", ans: ["かんせつ", "きんにく", "けっかん"] },
+        { q: "うでを まげるとき きんにくは？", ans: ["ちぢむ", "のびる", "かわらない"] },
+        { q: "ひとの たいおんは だいたい？", ans: ["36ど", "30ど", "40ど"] },
+        { q: "あせを かくのは なぜ？", ans: ["ねつをさげる", "みずがほしい", "おもいから"] },
+        { q: "あかちゃんは 最初 なにをのむ？", ans: ["おっぱい", "ジュース", "みず"] },
+        { q: "メダカの たまごは なにいろ？", ans: ["とうめい", "くろ", "あか"] },
+        { q: "トンボの ようちゅうは？", ans: ["ヤゴ", "ボウフラ", "ウジ"] },
+        { q: "カの ようちゅうは？", ans: ["ボウフラ", "ヤゴ", "オタマジャクシ"] },
+        { q: "ハエの ようちゅうは？", ans: ["ウジ", "ケムシ", "イモムシ"] },
+        { q: "カブトムシの ツノは どっち？", ans: ["オス", "メス", "どっちも"] },
+        { q: "スズムシは どうやって なく？", ans: ["はねをこする", "のどでなく", "あしをこする"] },
+        { q: "ミツバチが あつめるのは？", ans: ["みつ", "くさ", "みず"] },
+        { q: "アリの しょっかくは なにする？", ans: ["においをかぐ", "たたかう", "とぶ"] },
+        { q: "バッタの みみは どこ？", ans: ["おなか", "あたま", "あし"] },
+        { q: "セミの みみは どこ？", ans: ["おなか", "あし", "はね"] },
+        { q: "チョウの あしは どこに ついてる？", ans: ["むね", "おなか", "あたま"] },
+        { q: "テントウムシは なにをたべる？", ans: ["アブラムシ", "はっぱ", "みつ"] },
+        { q: "ミノムシは なにの ようちゅう？", ans: ["ガ", "チョウ", "ハエ"] },
+        { q: "カタツムリは こんちゅう？", ans: ["ちがう", "そう", "はんぶんそう"] },
+        { q: "カニは なにの なかま？", ans: ["エビ", "サカナ", "カイ"] },
+        { q: "イカの あしは なんぼん？", ans: ["10ぽん", "8ぽん", "6ぽん"] },
+        { q: "タコの あしは なんぼん？", ans: ["8ぽん", "10ぽん", "12ほん"] },
+        { q: "イルカは さかな？", ans: ["ちがう", "そう", "はんぶんそう"] },
+        { q: "ペンギンは なにの なかま？", ans: ["とり", "さかな", "ほにゅうるい"] },
+        { q: "コウモリは なにの なかま？", ans: ["ほにゅうるい", "とり", "むし"] },
+        { q: "クジラは どうやって いきをする？", ans: ["はい", "エラ", "ヒフ"] },
+        { q: "トカゲの しっぽは きれると？", ans: ["はえてくる", "そのまま", "しぬ"] },
+        { q: "ヘビに 足は ある？", ans: ["ない", "ある", "むかしあった"] },
+        { q: "カメは なにの なかま？", ans: ["はちゅうるい", "りょうせいるい", "さかな"] },
+        { q: "カエルは なにの なかま？", ans: ["りょうせいるい", "はちゅうるい", "さかな"] },
+        { q: "サケは どこで うまれる？", ans: ["かわ", "うみ", "いけ"] },
+        { q: "ウナギは どこで うまれる？", ans: ["うみ", "かわ", "ぬま"] },
+        { q: "1ねんで いちばん ひるが ながいのは？", ans: ["げし", "とうじ", "しゅんぶん"] },
+        { q: "1ねんで いちばん ひるが みじかいのは？", ans: ["とうじ", "げし", "しゅうぶん"] },
+        { q: "たいようの ひかりが ちきゅうにとどくまで？", ans: ["8ぷん", "1びょう", "1じかん"] },
+        { q: "つきの ひかりは なに？", ans: ["たいようの反射", "じぶんでひかる", "でんき"] },
+        { q: "にちしょくは なにが かくれる？", ans: ["たいよう", "つき", "ちきゅう"] },
+        { q: "がっしょくは なにが かくれる？", ans: ["つき", "たいよう", "ちきゅう"] },
+        { q: "ほしは なぜ ひかる？", ans: ["もえている", "反射している", "でんき"] },
+        { q: "ながれぼしの しょうたいは？", ans: ["ちりやいし", "ほし", "UFO"] },
+        { q: "うちゅうに くうきは ある？", ans: ["ない", "ある", "すこしある"] },
+        { q: "ロケットは なにで とぶ？", ans: ["ガスをふきだす", "プロペラ", "はね"] },
+        { q: "ちきゅうは まわっている？", ans: ["まわっている", "とまっている", "ゆれている"] },
+        { q: "じしんが おきたら？", ans: ["つくえのした", "そとへでる", "ひをけす"] },
+        { q: "つなみが くるときは？", ans: ["たかいところへ", "うみをみる", "いえにいる"] },
+        { q: "たいふうの めは？", ans: ["はれている", "あめがすごい", "かぜがすごい"] },
+        { q: "ゆきは なにから できる？", ans: ["みず", "しお", "さとう"] },
+        { q: "ひょうは なに？", ans: ["こおりのつぶ", "ゆき", "あめ"] },
+        { q: "きりは なに？", ans: ["みずのつぶ", "けむり", "ガス"] },
+        { q: "さばくに おおいのは？", ans: ["すな", "き", "みず"] },
+        { q: "かせいは なにいろ？", ans: ["あか", "あお", "きいろ"] },
+        { q: "もくせいは おおきい？", ans: ["とてもおおきい", "ちいさい", "ちきゅうとおなじ"] },
+        { q: "どせいの わっかは なに？", ans: ["こおりやいし", "ガス", "けむり"] },
+        { q: "きょうりゅうは いま いる？", ans: ["いない", "いる", "どうぶつえんにいる"] },
+        { q: "かせきは なに？", ans: ["むかしのいきもの", "ただのいし", "ほうせき"] },
+        { q: "せきゆは なにから できる？", ans: ["むかしのいきもの", "みず", "いし"] },
+        { q: "ダイヤモンドは なにでできてる？", ans: ["すみ", "ガラス", "きん"] },
+        { q: "じしゃくを あたためると？", ans: ["よわくなる", "つよくなる", "かわらない"] },
+        { q: "すなてつは なにから できる？", ans: ["いわ", "き", "プラスチック"] },
+        { q: "コイルに でんきを ながすと？", ans: ["じしゃくになる", "あつくなる", "ひかる"] },
+        { q: "モーターは なにで まわる？", ans: ["じしゃくとでんき", "かぜ", "みず"] },
+        { q: "かん電池の なかみは？", ans: ["すみとやくひん", "みず", "くうき"] },
+        { q: "LEDは でんきを？", ans: ["あまりつかわない", "たくさんつかう", "あつくなる"] },
+        { q: "おとは なにで つたわる？", ans: ["しんどう", "ひかり", "かぜ"] },
+        { q: "おとは くうきがないと？", ans: ["きこえない", "よくきこえる", "かわらない"] },
+        { q: "やまびこは おとが？", ans: ["はねかえる", "きえる", "おおきくなる"] },
+        { q: "ひかりの はやさは？", ans: ["すごくはやい", "おそい", "おととおなじ"] },
+        { q: "カメラは なにを つかう？", ans: ["レンズ", "じしゃく", "モーター"] },
+        { q: "メガネは なにをする？", ans: ["ひかりをまげる", "ひかりをとめる", "いろをつける"] },
+        { q: "プリズムで ひかりを わけると？", ans: ["にじができる", "きえる", "しろくなる"] },
+        { q: "シャボンだまが いろづくのは？", ans: ["ひかりの反射", "えのぐ", "ガス"] },
+        { q: "みずと あぶら をいれると？", ans: ["あぶらがうく", "まざる", "みずがうく"] },
+        { q: "せっけんは なにをする？", ans: ["あぶらをおとす", "みずをはじく", "かためる"] },
+        { q: "ジュースを こおらせると おもさは？", ans: ["かわらない", "おもくなる", "かるくなる"] },
+        { q: "てつは さびると どうなる？", ans: ["あかくなる", "あおくなる", "しろくなる"] },
+        { q: "10円だまは なにで できてる？", ans: ["どう", "きん", "アルミ"] },
+        { q: "1円だまは なにで できてる？", ans: ["アルミ", "てつ", "ぎん"] },
+        { q: "じしゃくにつく おかねは？", ans: ["ない", "100えん", "500えん"] },
+        { q: "おふろで ゆげが でるのは？", ans: ["みずがじょうはつ", "けむり", "ガス"] },
+        { q: "ドライアイスは なに？", ans: ["にさんかたんそ", "こおり", "ちっそ"] },
+        { q: "炭酸ジュースの あわは？", ans: ["にさんかたんそ", "さんそ", "くうき"] },
+        { q: "パンが ふくらむのは？", ans: ["イーストきん", "さとう", "しお"] },
+        { q: "ヨーグルトを つくるのは？", ans: ["にゅうさんきん", "カビ", "ウイルス"] },
+        { q: "ナットウは なにで つくる？", ans: ["ナットウきん", "カビ", "イースト"] },
+        { q: "カビは いきもの？", ans: ["いきもの", "ゴミ", "いし"] },
+        { q: "キノコは なにの なかま？", ans: ["カビ", "やさい", "はな"] },
+        { q: "はなの みつが すきなのは？", ans: ["メジロ", "スズメ", "カラス"] },
+        { q: "フクロウは いつ かつどうする？", ans: ["よる", "ひる", "あさ"] },
+        { q: "キツツキは なにを する？", ans: ["きにあなをあける", "きをたべる", "ねる"] },
+        { q: "ダチョウは とべる？", ans: ["とべない", "とべる", "すこしとべる"] },
+        { q: "ペンギンは どこに すんでる？", ans: ["みなみのしま", "きたぐに", "もり"] },
+        { q: "ホッキョクグマの ひふの いろは？", ans: ["くろ", "しろ", "ピンク"] },
+        { q: "パンダの しっぽは なにいろ？", ans: ["しろ", "くろ", "グレー"] },
+        { q: "ウサギの みみが ながいのは？", ans: ["おとをきく", "かっこいい", "とぶため"] },
+        { q: "キリンの くびが ながいのは？", ans: ["たかいはっぱをたべる", "とおくをみる", "たたかう"] },
+        { q: "ゾウの はなは なに？", ans: ["うわくちびるとはな", "した", "あご"] },
+        { q: "ラクダの コブの なかみは？", ans: ["しぼう", "みず", "ほね"] },
+        { q: "シマウマの はだは なにいろ？", ans: ["くろ", "しろ", "しましま"] },
+        { q: "ライオンの オスの たてがみは？", ans: ["つよいしるし", "さむいから", "おしゃれ"] },
+        { q: "ネコの ヒゲは なにする？", ans: ["はばをはかる", "においをかぐ", "あじをみる"] },
+        { q: "イヌが はなを なめるのは？", ans: ["においをよくかぐ", "おいしい", "かゆい"] },
+        { q: "ハムスターは どこに ためる？", ans: ["ほおぶくろ", "おなか", "あし"] },
+        { q: "ウシの いぶくろは いくつ？", ans: ["4つ", "1つ", "2つ"] },
+        { q: "ウマは どうやって ねる？", ans: ["たってねる", "すわってねる", "ねない"] },
+        { q: "コアラが たべるのは？", ans: ["ユーカリ", "ササ", "バナナ"] },
+        { q: "ラッコが つかう どうぐは？", ans: ["いし", "ぼう", "かい"] },
+        { q: "モグラは どこに すむ？", ans: ["つちのなか", "きのうえ", "みずのなか"] },
+        { q: "リスが かくすのは？", ans: ["どんぐり", "いし", "はっぱ"] },
+        { q: "カンガルーの おなかには？", ans: ["ふくろがある", "ポケットがある", "なにもない"] },
+        { q: "カバの あせの いろは？", ans: ["あか", "とうめい", "きいろ"] },
+        { q: "サイの ツノは なにでできてる？", ans: ["け", "ほね", "き"] },
+        { q: "フラミンゴが かたあしで たつのは？", ans: ["さむいから", "つかれたから", "ケガ"] },
+        { q: "カメレオンは なにをする？", ans: ["いろをかえる", "とぶ", "なく"] },
+        { q: "ワニは どこに すむ？", ans: ["かわ", "うみ", "やま"] },
+        { q: "サメの はは？", ans: ["なんどもはえる", "1かいだけ", "はえない"] },
+        { q: "エイの しっぽには？", ans: ["どくがある", "はがある", "めがある"] },
+        { q: "クラゲは ほねがある？", ans: ["ない", "ある", "すこしある"] },
+        { q: "サンゴは いし？", ans: ["いきもの", "いし", "くさ"] },
+        { q: "カイメンは なに？", ans: ["いきもの", "スポンジ", "いし"] },
+        { q: "ヒトデの あしは？", ans: ["また生える", "生えない", "しぬ"] },
+        { q: "ウニの トゲは なに？", ans: ["みをまもる", "あるく", "たたかう"] },
+        { q: "ヤドカリの いえは？", ans: ["かいがら", "いし", "き"] },
+        { q: "クリオネは なに？", ans: ["かいのなかま", "さかな", "クラゲ"] },
+        { q: "ダイオウイカは おおきい？", ans: ["とてもおおきい", "ちいさい", "ふつう"] },
+        { q: "シーラカンスは？", ans: ["いきたかせき", "ぜつめつした", "あたらしいさかな"] },
+        { q: "しんかいぎょは どこにいる？", ans: ["ふかいうみ", "あさいうみ", "かわ"] },
+        { q: "チョウチンアンコウは？", ans: ["ひかる", "とぶ", "なく"] },
+        { q: "リュウグウノツカイは？", ans: ["ながいさかな", "まるいさかな", "ちいさいさかな"] },
+        { q: "マンボウは どうやって およぐ？", ans: ["ゆっくり", "はやく", "とぶ"] },
+        { q: "トビウオは？", ans: ["うみのうえをとぶ", "そらをとぶ", "あるく"] },
+        { q: "タツノオトシゴは？", ans: ["さかな", "むし", "うま"] }
+    ];
+
+    // --- 音響システム ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+    function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+    function playTone(freq, type, duration, vol = 0.1, rampTo = 0.01) {
+        if (!audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(rampTo, audioCtx.currentTime + duration); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+    function sfxJump() { if (!audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.15); }
+    function sfxCorrect() { let notes = [1046, 1318, 1568, 2093]; let time = 0; notes.forEach(f => { setTimeout(() => playTone(f, 'sine', 0.3, 0.05), time); time += 60; }); }
+    function sfxWrong() { if (!audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'triangle'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.4); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.4); }
+    function bgmStart() { let time = 0; [880, 0, 880, 1174, 1318, 1760].forEach((f, i) => { if(f > 0) setTimeout(() => playTone(f, 'sine', 0.15, 0.05), time); time += 150; }); }
+    function bgmReward() { let notes = [1046, 1318, 1568, 2093, 1568, 2093]; let times = [0, 150, 300, 450, 600, 750]; notes.forEach((f, i) => { setTimeout(() => playTone(f, 'sine', 0.5, 0.08), times[i]); }); }
+
+    // --- ゲームロジック ---
+    function startGame() {
+        initAudio(); bgmStart();
+        document.getElementById('start-screen').style.display = 'none';
+        score = 0; updateScore();
+        nextQuestion();
+        isPlaying = true;
+    }
+    function updateScore() { document.getElementById('score-board').innerText = '★ ' + score; }
+
+    function nextQuestion() {
+        const msgEl = document.getElementById('message'); msgEl.style.display = 'none';
+        
+        // ランダムに問題を選ぶ
+        const qIndex = Math.floor(Math.random() * quizData.length);
+        const qData = quizData[qIndex];
+        
+        document.getElementById('question-board').innerText = qData.q;
+        
+        // 選択肢作成（正解は ans[0]）
+        let options = qData.ans.map((val, idx) => ({ val: val, isCorrect: idx === 0 }));
+        shuffleArray(options);
+        currentOptions = options;
+
+        for(let i=0; i<3; i++) {
+            const btn = document.getElementById('ans' + i);
+            btn.innerText = options[i].val;
+            // 文字数が多い場合はフォントサイズを小さくする
+            if(options[i].val.length > 6) btn.style.fontSize = "12px";
+            else btn.style.fontSize = "16px";
+        }
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function checkAnswer(index) {
+        if (!isPlaying) return;
+        const msgEl = document.getElementById('message');
+        
+        if (currentOptions[index].isCorrect) {
+            // 正解
+            score++; updateScore(); sfxCorrect();
+            msgEl.innerText = "せいかい！"; msgEl.className = "correct"; msgEl.style.display = 'block';
+            const kirby = document.getElementById('kirby'); kirby.classList.remove('jump'); void kirby.offsetWidth; kirby.classList.add('jump'); sfxJump();
+            
+            // 10問ごとにご褒美
+            if (score > 0 && score % 10 === 0) { setTimeout(() => showReward(score), 1000); } 
+            else { setTimeout(nextQuestion, 1200); }
+        } else {
+            // 不正解
+            sfxWrong();
+            msgEl.innerText = "おしい！"; msgEl.className = "wrong"; msgEl.style.display = 'block';
+        }
+    }
+
+    function showReward(currentScore) {
+        isPlaying = false; bgmReward();
+        const rewardScreen = document.getElementById('reward-screen');
+        const rTitle = document.getElementById('reward-title'); const rIcon = document.getElementById('reward-icon');
+        const rText = document.getElementById('reward-text'); const container = document.getElementById('game-container');
+
+        if (currentScore === 10) { rTitle.innerText = "10もん クリア！"; rIcon.innerText = "🍎"; rText.innerText = "まだまだ いくよ！"; container.style.background = "linear-gradient(#FFB7C5 60%, #90EE90 60%)"; }
+        else if (currentScore === 50) { rTitle.innerText = "50もん クリア！"; rIcon.innerText = "💎"; rText.innerText = "はんぶん きたね！"; container.style.background = "linear-gradient(#8A2BE2 60%, #3CB371 60%)"; }
+        else if (currentScore === 100) { rTitle.innerText = "100もん クリア！"; rIcon.innerText = "🌟"; rText.innerText = "すごすぎる！！"; container.style.background = "linear-gradient(#191970 60%, #2F4F4F 60%)"; }
+        else if (currentScore >= 200) { rTitle.innerText = "200もん かんそう！"; rIcon.innerText = "👑"; rText.innerText = "でんせつの りかマスター！"; container.style.background = "linear-gradient(to right, #f8b500, #fceabb)"; }
+        else { rTitle.innerText = currentScore + "もん クリア！"; rIcon.innerText = "🍭"; rText.innerText = "やったね！"; }
+        
+        rewardScreen.style.display = 'flex';
+    }
+    function closeReward() { document.getElementById('reward-screen').style.display = 'none'; isPlaying = true; nextQuestion(); }
+</script>
+</body>
+</html>
