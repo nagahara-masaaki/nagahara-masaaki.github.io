@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>カービィ＆ワドルディのパズル</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #FFF8DC; /* クリーム色 */
+            margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; overflow: hidden; touch-action: none; user-select: none;
+        }
+        #game-container {
+            position: relative;
+            width: 400px; height: 650px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: #fff; border-radius: 10px; overflow: hidden;
+            border: 6px solid #8B4513;
+        }
+        canvas { display: block; }
+        
+        /* UIパーツ */
+        .score-box {
+            position: absolute; top: 10px; left: 10px;
+            font-size: 24px; font-weight: bold; color: #555;
+            z-index: 10; pointer-events: none;
+        }
+        .next-box {
+            position: absolute; top: 10px; right: 10px;
+            width: 70px; height: 70px;
+            background: rgba(0,0,0,0.05); border-radius: 10px;
+            border: 2px solid #ccc;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 12px; color: #666;
+            z-index: 10; pointer-events: none;
+        }
+        .next-box span { margin-bottom: 2px; }
+
+        #game-over {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            color: white; z-index: 100;
+        }
+        button {
+            padding: 15px 30px; font-size: 20px; background: #FF69B4; color: white;
+            border: none; border-radius: 50px; cursor: pointer; margin-top: 20px;
+            border-bottom: 4px solid #C71585; transition: 0.1s;
+        }
+        button:active { transform: translateY(4px); border-bottom: 2px solid #C71585; }
+
+        /* ゲームオーバーライン */
+        .deadline {
+            position: absolute; top: 100px; left: 0; width: 100%; height: 2px;
+            background: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255,0,0,0.5) 10px, rgba(255,0,0,0.5) 20px);
+            pointer-events: none; z-index: 5;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="score-box">SCORE: <span id="score">0</span></div>
+    <div class="next-box">
+        <span>NEXT</span>
+        <canvas id="nextCanvas" width="50" height="50"></canvas>
+    </div>
+    <div class="deadline"></div>
+    
+    <canvas id="world"></canvas>
+
+    <div id="game-over">
+        <h1>GAME OVER</h1>
+        <h2 id="final-score">SCORE: 0</h2>
+        <button onclick="location.reload()">もういちど</button>
+    </div>
+</div>
+
+<script>
+    // --- Matter.js エイリアス ---
+    const Engine = Matter.Engine, Render = Matter.Render, Runner = Matter.Runner, Bodies = Matter.Bodies, Composite = Matter.Composite, Events = Matter.Events, World = Matter.World;
+
+    // --- ゲーム設定 ---
+    const WIDTH = 400; HEIGHT = 650; WALL_THICK = 40; DEADLINE_Y = 100;
+
+    // --- キャラクター定義 (11種類: カービィとワドルディのみ) ---
+    const CHARACTERS = [
+        { radius: 15, score: 1,  type: 'kirby', color: ['#FFB7C5', '#FFC0CB'], face: 'normal' }, // 0: ミニカービィ(ピンク)
+        { radius: 22, score: 2,  type: 'waddle', color: ['#F4A460', '#FFDAB9'], face: 'normal' }, // 1: ミニワドルディ(橙)
+        { radius: 30, score: 4,  type: 'kirby', color: ['#FFD700', '#FFFFE0'], face: 'smile' },  // 2: カービィ(黄)
+        { radius: 38, score: 8,  type: 'waddle', color: ['#CD5C5C', '#F08080'], face: 'angry' },  // 3: ワドルディ(赤)
+        { radius: 48, score: 16, type: 'kirby', color: ['#87CEEB', '#E0FFFF'], face: 'surprised'},// 4: カービィ(青)
+        { radius: 58, score: 32, type: 'waddle', color: ['#90EE90', '#F0FFF0'], face: 'crying' }, // 5: ワドルディ(緑)
+        { radius: 69, score: 64, type: 'kirby', color: ['#32CD32', '#98FB98'], face: 'wink' },   // 6: カービィ(草)
+        { radius: 80, score: 128, type: 'waddle', color: ['#4682B4', '#B0C4DE'], face: 'sleep' }, // 7: ワドルディ(青)
+        { radius: 95, score: 256, type: 'kirby', color: ['#9370DB', '#E6E6FA'], face: 'serious'}, // 8: カービィ(紫)
+        { radius: 110, score: 512, type: 'waddle', color: ['#696969', '#D3D3D3'], face: 'retro' }, // 9: ワドルディ(白黒)
+        { radius: 130, score: 1000, type: 'kirby', color: ['#FF69B4', '#FFB6C1'], face: 'full' }   // 10: 巨大カービィ(濃ピンク)
+    ];
+
+    // --- ゲーム状態 ---
+    let engine, runner; let score = 0; let currentNext = 0; let isGameOver = false; let canDrop = true; let dropX = WIDTH / 2;
+    const AudioContext = window.AudioContext || window.webkitAudioContext; let audioCtx = new AudioContext();
+
+    // --- 初期化 ---
+    function init() {
+        engine = Engine.create();
+        const canvas = document.getElementById('world'); canvas.width = WIDTH; canvas.height = HEIGHT;
+        const ctx = canvas.getContext('2d');
+        const ground = Bodies.rectangle(WIDTH/2, HEIGHT + WALL_THICK/2, WIDTH, WALL_THICK, { isStatic: true });
+        const leftWall = Bodies.rectangle(-WALL_THICK/2, HEIGHT/2, WALL_THICK, HEIGHT, { isStatic: true });
+        const rightWall = Bodies.rectangle(WIDTH + WALL_THICK/2, HEIGHT/2, WALL_THICK, HEIGHT, { isStatic: true });
+        World.add(engine.world, [ground, leftWall, rightWall]);
+        currentNext = Math.floor(Math.random() * 4); drawNext(); // 初期はLv0-3
+        runner = Runner.create(); Runner.run(runner, engine);
+        (function renderLoop() {
+            if (isGameOver) return;
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+            if(canDrop) {
+                ctx.beginPath(); ctx.moveTo(dropX, 20); ctx.lineTo(dropX, HEIGHT);
+                ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+                drawCharacter(ctx, dropX, 50, currentNext, 0); 
+            }
+            const bodies = Composite.allBodies(engine.world);
+            for (let i = 0; i < bodies.length; i++) {
+                const b = bodies[i]; if (b.isStatic) continue;
+                if (b.label && b.label.startsWith('char_')) {
+                    const level = parseInt(b.label.split('_')[1]);
+                    drawCharacter(ctx, b.position.x, b.position.y, level, b.angle);
+                }
+            }
+            requestAnimationFrame(renderLoop);
+        })();
+        Events.on(engine, 'collisionStart', function(event) {
+            const pairs = event.pairs;
+            for (let i = 0; i < pairs.length; i++) {
+                const bodyA = pairs[i].bodyA; const bodyB = pairs[i].bodyB;
+                if (bodyA.label.startsWith('char_') && bodyB.label.startsWith('char_')) {
+                    const levelA = parseInt(bodyA.label.split('_')[1]); const levelB = parseInt(bodyB.label.split('_')[1]);
+                    if (levelA === levelB && levelA < CHARACTERS.length - 1) {
+                        if (!bodyA.isRemoved && !bodyB.isRemoved) {
+                            bodyA.isRemoved = true; bodyB.isRemoved = true;
+                            const midX = (bodyA.position.x + bodyB.position.x) / 2; const midY = (bodyA.position.y + bodyB.position.y) / 2;
+                            World.remove(engine.world, [bodyA, bodyB]);
+                            addCharacter(midX, midY, levelA + 1);
+                            score += CHARACTERS[levelA].score; document.getElementById('score').innerText = score;
+                            playPopSound(levelA);
+                        }
+                    }
+                }
+            }
+        });
+        Events.on(engine, 'afterUpdate', function() {
+            const bodies = Composite.allBodies(engine.world); let overflow = false;
+            for (let b of bodies) {
+                if (!b.isStatic && b.position.y < DEADLINE_Y && b.velocity.y > -0.1 && b.velocity.y < 0.1 && b.lifeTime > 100) { overflow = true; }
+                if(b.lifeTime) b.lifeTime++; else b.lifeTime = 1;
+            }
+            if (overflow && !isGameOver) {
+                isGameOver = true; document.getElementById('game-over').style.display = 'flex';
+                document.getElementById('final-score').innerText = 'SCORE: ' + score;
+            }
+        });
+    }
+    function addCharacter(x, y, level) {
+        const radius = CHARACTERS[level].radius;
+        const body = Bodies.circle(x, y, radius, { label: 'char_' + level, restitution: 0.3, friction: 0.1, density: 0.002 * (level + 1) });
+        World.add(engine.world, body);
+    }
+
+    // --- 描画関数 (カービィ＆ワドルディ専用) ---
+    function drawCharacter(ctx, x, y, level, angle) {
+        const charData = CHARACTERS[level]; const r = charData.radius;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
+        if (charData.type === 'kirby') {
+            drawKirbyVari(ctx, r, charData.color[0], charData.color[1], charData.face);
+        } else {
+            drawWaddleDeeVari(ctx, r, charData.color[0], charData.color[1], charData.face);
+        }
+        ctx.restore();
+    }
+
+    // 球体ベース
+    function drawSphere(ctx, r, colorMain, colorLight) {
+        const grad = ctx.createRadialGradient(-r*0.3, -r*0.3, r*0.2, 0, 0, r);
+        grad.addColorStop(0, colorLight); grad.addColorStop(1, colorMain);
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
+        ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 10; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
+        ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 1; ctx.stroke(); ctx.shadowColor = 'transparent';
+    }
+
+    // カービィ描画（色・表情可変）
+    function drawKirbyVari(ctx, r, colorMain, colorLight, face) {
+        drawSphere(ctx, r, colorMain, colorLight);
+        // 頬
+        ctx.fillStyle = 'rgba(255, 100, 100, 0.4)';
+        ctx.beginPath(); ctx.ellipse(-r*0.5, 0, r*0.15, r*0.08, 0, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(r*0.5, 0, r*0.15, r*0.08, 0, 0, Math.PI*2); ctx.fill();
+        drawFace(ctx, r, face, true);
+    }
+    // ワドルディ描画（色・表情可変）
+    function drawWaddleDeeVari(ctx, r, colorMain, colorLight, face) {
+        drawSphere(ctx, r, colorMain, colorLight);
+        // 顔の肌色部分 (レトロ以外)
+        if (face !== 'retro') {
+            ctx.fillStyle = '#FFE4C4';
+            ctx.beginPath(); ctx.ellipse(0, -r*0.1, r*0.7, r*0.5, 0, 0, Math.PI*2); ctx.fill();
+        } else {
+            ctx.fillStyle = '#D3D3D3'; // レトロ用グレー
+            ctx.beginPath(); ctx.ellipse(0, -r*0.1, r*0.7, r*0.5, 0, 0, Math.PI*2); ctx.fill();
+        }
+        drawFace(ctx, r, face, false);
+    }
+
+    // 表情描画 (共通パーツ)
+    function drawFace(ctx, r, type, isKirby) {
+        ctx.fillStyle = 'black'; ctx.strokeStyle = 'black'; ctx.lineWidth = 2;
+        const eyeX = r * (isKirby ? 0.25 : 0.2); const eyeY = r * (isKirby ? -0.15 : -0.2);
+        
+        switch(type) {
+            case 'normal': // にっこり
+                drawEyes(ctx, r, eyeX, eyeY, isKirby);
+                if(isKirby) { ctx.beginPath(); ctx.arc(0, r*0.15, r*0.1, 0, Math.PI); ctx.fill(); } // 口
+                break;
+            case 'smile': // すまし顔
+                drawEyes(ctx, r, eyeX, eyeY, isKirby);
+                if(isKirby) { ctx.beginPath(); ctx.moveTo(-r*0.1, r*0.15); ctx.quadraticCurveTo(0, r*0.25, r*0.1, r*0.15); ctx.stroke(); }
+                break;
+            case 'angry': // おこり顔
+                // 眉毛
+                ctx.beginPath(); ctx.moveTo(-eyeX-r*0.1, eyeY-r*0.1); ctx.lineTo(-eyeX+r*0.05, eyeY); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(eyeX+r*0.1, eyeY-r*0.1); ctx.lineTo(eyeX-r*0.05, eyeY); ctx.stroke();
+                drawEyes(ctx, r, eyeX, eyeY, isKirby);
+                if(isKirby) { ctx.beginPath(); ctx.moveTo(-r*0.1, r*0.25); ctx.quadraticCurveTo(0, r*0.15, r*0.1, r*0.25); ctx.stroke(); }
+                break;
+            case 'surprised': // おどろき顔
+                drawEyes(ctx, r, eyeX, eyeY, isKirby, true); // 丸い目
+                if(isKirby) { ctx.beginPath(); ctx.ellipse(0, r*0.2, r*0.1, r*0.15, 0, 0, Math.PI*2); ctx.fill(); }
+                break;
+            case 'crying': // なき顔
+                ctx.beginPath(); ctx.moveTo(-eyeX-r*0.1, eyeY); ctx.lineTo(-eyeX+r*0.1, eyeY); ctx.stroke(); // 涙目線
+                ctx.beginPath(); ctx.moveTo(eyeX-r*0.1, eyeY); ctx.lineTo(eyeX+r*0.1, eyeY); ctx.stroke();
+                // 涙
+                ctx.fillStyle = '#87CEEB';
+                ctx.beginPath(); ctx.arc(-eyeX, eyeY+r*0.15, r*0.08, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(eyeX, eyeY+r*0.15, r*0.08, 0, Math.PI*2); ctx.fill();
+                if(isKirby) { ctx.fillStyle='black'; ctx.beginPath(); ctx.arc(0, r*0.2, r*0.12, Math.PI, 0); ctx.fill(); } // への字口
+                break;
+            case 'wink': // ウィンク
+                drawEyes(ctx, r, eyeX, eyeY, isKirby); // 左目は普通
+                // 右目を上書きして閉じる
+                ctx.fillStyle = isKirby ? '#FFB7C5' : '#FFE4C4'; // 肌色で塗りつぶし
+                ctx.beginPath(); ctx.arc(eyeX, eyeY, r*0.15, 0, Math.PI*2); ctx.fill();
+                 // 閉じ目線
+                ctx.beginPath(); ctx.moveTo(eyeX-r*0.1, eyeY); ctx.quadraticCurveTo(eyeX, eyeY+r*0.1, eyeX+r*0.1, eyeY); ctx.stroke();
+                if(isKirby) { ctx.beginPath(); ctx.arc(0, r*0.15, r*0.1, 0, Math.PI); ctx.fill(); }
+                break;
+            case 'sleep': // ねがお
+                ctx.beginPath(); ctx.moveTo(-eyeX-r*0.1, eyeY); ctx.quadraticCurveTo(-eyeX, eyeY+r*0.1, -eyeX+r*0.1, eyeY); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(eyeX-r*0.1, eyeY); ctx.quadraticCurveTo(eyeX, eyeY+r*0.1, eyeX+r*0.1, eyeY); ctx.stroke();
+                if(isKirby) { ctx.beginPath(); ctx.arc(0, r*0.2, r*0.05, 0, Math.PI*2); ctx.fill(); } // 小さい口
+                break;
+            case 'serious': // キリッ
+                // 眉毛
+                ctx.beginPath(); ctx.moveTo(-eyeX-r*0.1, eyeY-r*0.15); ctx.lineTo(-eyeX+r*0.1, eyeY-r*0.05); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(eyeX+r*0.1, eyeY-r*0.15); ctx.lineTo(eyeX-r*0.1, eyeY-r*0.05); ctx.stroke();
+                drawEyes(ctx, r, eyeX, eyeY, isKirby);
+                if(isKirby) { ctx.beginPath(); ctx.moveTo(-r*0.1, r*0.2); ctx.lineTo(r*0.1, r*0.2); ctx.stroke(); } // 一文字口
+                break;
+            case 'retro': // レトロ (白黒)
+                ctx.fillStyle = 'black';
+                ctx.beginPath(); ctx.arc(-eyeX, eyeY, r*0.08, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(eyeX, eyeY, r*0.08, 0, Math.PI*2); ctx.fill();
+                break;
+            case 'full': // まんぷく
+                drawEyes(ctx, r, eyeX, eyeY, isKirby);
+                // 膨れた口
+                 ctx.beginPath(); ctx.ellipse(0, r*0.2, r*0.15, r*0.1, 0, 0, Math.PI*2); ctx.fill();
+                break;
+        }
+    }
+
+    // 目の描画ヘルパー
+    function drawEyes(ctx, r, x, y, isKirby, isRound = false) {
+        ctx.fillStyle = 'black';
+        if(isRound) {
+             ctx.beginPath(); ctx.arc(-x, y, r*(isKirby?0.08:0.06), 0, Math.PI*2); ctx.fill();
+             ctx.beginPath(); ctx.arc(x, y, r*(isKirby?0.08:0.06), 0, Math.PI*2); ctx.fill();
+        } else {
+            ctx.beginPath(); ctx.ellipse(-x, y, r*(isKirby?0.08:0.08), r*(isKirby?0.18:0.15), 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(x, y, r*(isKirby?0.08:0.08), r*(isKirby?0.18:0.15), 0, 0, Math.PI*2); ctx.fill();
+        }
+        // ハイライト（レトロ以外）
+        if (!isRound) {
+            ctx.fillStyle = 'white';
+            ctx.beginPath(); ctx.ellipse(-x, y-r*(isKirby?0.07:0.05), r*0.04, r*0.08, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(x, y-r*(isKirby?0.07:0.05), r*0.04, r*0.08, 0, 0, Math.PI*2); ctx.fill();
+        }
+    }
+
+    // --- 入力処理 ---
+    const container = document.getElementById('game-container');
+    function moveDrop(x) {
+        const rect = container.getBoundingClientRect(); let localX = x - rect.left;
+        const r = CHARACTERS[currentNext].radius; localX = Math.max(r, Math.min(WIDTH - r, localX)); dropX = localX;
+    }
+    function drop() {
+        if (!canDrop || isGameOver) return;
+        canDrop = false; addCharacter(dropX, 50, currentNext); playDropSound();
+        currentNext = Math.floor(Math.random() * 4); drawNext(); // 初期ドロップはLv0-3
+        setTimeout(() => { canDrop = true; }, 800);
+    }
+    container.addEventListener('mousemove', e => moveDrop(e.clientX));
+    container.addEventListener('touchmove', e => { e.preventDefault(); moveDrop(e.touches[0].clientX); }, {passive: false});
+    container.addEventListener('mousedown', drop);
+    container.addEventListener('touchstart', e => { e.preventDefault(); drop(); }, {passive: false});
+
+    function drawNext() {
+        const c = document.getElementById('nextCanvas'); const cx = c.getContext('2d');
+        cx.clearRect(0,0,50,50); const r = CHARACTERS[currentNext].radius; const scale = 20 / r;
+        cx.save(); cx.translate(25, 25); cx.scale(scale, scale); drawCharacter(cx, 0, 0, currentNext, 0); cx.restore();
+    }
+
+    // --- 簡易効果音 ---
+    function playTone(freq, type, duration) {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+    function playDropSound() { playTone(400, 'sine', 0.1); }
+    function playPopSound(level) { const baseFreq = 800 + (level * 100); playTone(baseFreq, 'triangle', 0.1); setTimeout(() => playTone(baseFreq * 1.5, 'sine', 0.1), 50); }
+
+    init();
+</script>
+</body>
+</html>
