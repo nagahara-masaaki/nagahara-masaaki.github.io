@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>カービィのリズムゲーム・ファイナル</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #333; margin: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; overflow: hidden; user-select: none;
+            touch-action: none;
+        }
+        #game-container {
+            position: relative; width: 600px; height: 100vh; max-height: 800px;
+            background: linear-gradient(#191970 0%, #4B0082 50%, #FF69B4 100%);
+            border-left: 4px solid #fff; border-right: 4px solid #fff;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+        .lane-divider {
+            position: absolute; top: 0; left: 50%; width: 2px; height: 100%;
+            background: rgba(255,255,255,0.3); transform: translateX(-50%);
+        }
+        .judge-line {
+            position: absolute; bottom: 120px; width: 100%; height: 4px;
+            background: rgba(255,255,255,0.6); box-shadow: 0 0 10px #fff;
+        }
+
+        /* UI */
+        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+        #score-board { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #FF1493; }
+        #time-board { position: absolute; top: 20px; right: 20px; color: #00FFFF; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #000080; }
+        #mode-display { position: absolute; top: 60px; right: 20px; color: #fff; font-size: 16px; opacity: 0.8; }
+        #combo-display { position: absolute; top: 150px; width: 100%; text-align: center; color: #FFD700; font-size: 40px; font-weight: 900; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); opacity: 0; transition: transform 0.1s; }
+        .judge-text { position: absolute; bottom: 250px; width: 100%; text-align: center; font-size: 30px; font-weight: bold; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,0.5); animation: popUp 0.3s forwards; }
+        @keyframes popUp { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+
+        /* キャラクターエリア */
+        .character-area { position: absolute; bottom: 20px; width: 100%; height: 120px; display: flex; justify-content: space-around; pointer-events: none; }
+        .char-wrapper { position: relative; width: 100px; height: 100px; transition: transform 0.1s; }
+        .key-guide { position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); color: #fff; font-weight: bold; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 10px; font-size: 14px; }
+        .hit-anim { animation: bounceHit 0.15s ease-out; }
+        @keyframes bounceHit { 0% { transform: scale(1) translateY(0); } 50% { transform: scale(1.3) translateY(-20px); } 100% { transform: scale(1) translateY(0); } }
+
+        /* キャラクターCSS */
+        .kirby { width: 90px; height: 80px; background: radial-gradient(circle at 30% 30%, #FFB7C5, #FF9EAA); box-shadow: inset -5px -5px 15px rgba(0,0,0,0.15), 2px 2px 5px rgba(0,0,0,0.2); border-radius: 50%; position: absolute; bottom: 0; left: 0; right: 0; margin: auto; z-index: 10; }
+        .kirby::before, .kirby::after { content: ''; position: absolute; top: 22px; width: 7px; height: 18px; background: #000; border-radius: 50%; box-shadow: inset 2px 2px 2px rgba(255,255,255,0.5); }
+        .kirby::before { left: 28px; } .kirby::after { right: 28px; }
+        .kirby .cheeks::before, .kirby .cheeks::after { content: ''; position: absolute; top: 40px; width: 13px; height: 7px; background: #FF69B4; border-radius: 50%; opacity: 0.5; filter: blur(2px); }
+        .kirby .cheeks::before { left: 14px; } .kirby .cheeks::after { right: 14px; }
+        .kirby .mouth { position: absolute; top: 50px; left: 40px; width: 8px; height: 8px; background: #990000; border-radius: 50%; }
+        .kirby .foot { position: absolute; bottom: -8px; width: 35px; height: 22px; background: radial-gradient(circle at 40% 40%, #D63545, #B22222); border-radius: 20px; z-index: -1; }
+        .kirby .foot-l { left: -5px; } .kirby .foot-r { right: -5px; }
+        .kirby .candy { position: absolute; top: -15px; left: -10px; transform: rotate(-20deg); filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3)); }
+        .kirby .candy-stick { width: 5px; height: 35px; background: #f0f0f0; position: absolute; top: 18px; left: 10px; }
+        .kirby .candy-head { width: 25px; height: 25px; background: radial-gradient(circle, #FF6347, #FFD700); border-radius: 50%; }
+        .kirby .bandaid { position: absolute; top: 45px; right: 8px; width: 20px; height: 8px; background: #FFC0CB; transform: rotate(10deg); border: 1px solid #FF69B4; }
+
+        .waddle { width: 80px; height: 70px; background: radial-gradient(circle at 70% 30%, #F4A460, #D2691E); box-shadow: inset 5px -5px 15px rgba(0,0,0,0.15), 2px 2px 5px rgba(0,0,0,0.2); border-radius: 50%; position: absolute; bottom: 0; left: 0; right: 0; margin: auto; z-index: 10; }
+        .waddle .face { position: absolute; top: 8px; left: 8px; width: 64px; height: 54px; background: radial-gradient(ellipse at center, #FFF8DC, #FFE4C4); border-radius: 50% 50% 40% 40%; }
+        .waddle .face::before, .waddle .face::after { content: ''; position: absolute; top: 18px; width: 5px; height: 13px; background: #000; border-radius: 50%; box-shadow: inset 1px 1px 1px rgba(255,255,255,0.6); }
+        .waddle .face::before { left: 18px; } .waddle .face::after { right: 18px; }
+        .waddle .foot { position: absolute; bottom: -6px; width: 26px; height: 18px; background: radial-gradient(circle at 40% 40%, #FFD700, #DAA520); border-radius: 20px; z-index: -1; }
+        .waddle .foot-l { left: 4px; } .waddle .foot-r { right: 4px; }
+        .waddle .heart-tag { position: absolute; top: -10px; left: -20px; width: 30px; height: 30px; transform: rotate(-30deg); background: linear-gradient(#FF69B4, #87CEEB); border-radius: 50% 50% 0 0; clip-path: polygon(0% 0%, 100% 0%, 50% 100%); }
+        .waddle .bandaid-blue { position: absolute; top: 40px; right: 12px; width: 18px; height: 7px; background: #ADD8E6; transform: rotate(5deg); border: 1px solid blue; }
+
+        #gameCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* スクリーン系 */
+        #start-screen, #result-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 200;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; text-align: center;
+        }
+        #result-screen { display: none; }
+        
+        /* ボタン系 */
+        .btn-group { display: flex; gap: 20px; margin-top: 30px; }
+        button {
+            padding: 15px 30px; font-size: 20px; color: white;
+            border: none; border-radius: 50px; cursor: pointer; transition: 0.1s;
+            font-weight: bold; width: 160px;
+        }
+        button:active { transform: translateY(4px); }
+        
+        .btn-easy { background: #32CD32; border-bottom: 6px solid #228B22; }
+        .btn-easy:active { border-bottom: 2px solid #228B22; }
+        
+        .btn-normal { background: #1E90FF; border-bottom: 6px solid #000080; }
+        .btn-normal:active { border-bottom: 2px solid #000080; }
+        
+        .btn-hard { background: #FF4500; border-bottom: 6px solid #8B0000; }
+        .btn-hard:active { border-bottom: 2px solid #8B0000; }
+        
+        .btn-retry { background: #FF69B4; border-bottom: 6px solid #C71585; width: 200px; margin-top: 20px;}
+        .btn-retry:active { border-bottom: 2px solid #C71585; }
+
+        .ranking-list { margin-top: 20px; text-align: left; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; min-width: 300px; }
+        .ranking-item { font-size: 20px; margin: 5px 0; border-bottom: 1px solid #555; padding-bottom: 5px; display: flex; justify-content: space-between; }
+        .rank-num { color: #FFD700; font-weight: bold; width: 30px; }
+        .rank-score { color: #fff; }
+        .new-record { color: #FF4500; font-weight: bold; font-size: 40px; text-shadow: 0 0 20px #FFD700; animation: pulse 0.5s infinite alternate; margin-bottom: 10px; }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="lane-divider"></div>
+    <div class="judge-line"></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="ui-layer">
+        <div id="score-board">SCORE: 0</div>
+        <div id="time-board">TIME: 30</div>
+        <div id="mode-display"></div>
+        <div id="combo-display">0 COMBO</div>
+        <div id="judge-display"></div>
+    </div>
+
+    <div class="character-area">
+        <div class="char-wrapper" id="char-left">
+            <div class="kirby">
+                <div class="candy"><div class="candy-head"></div><div class="candy-stick"></div></div>
+                <div class="cheeks"></div><div class="bandaid"></div><div class="mouth"></div>
+                <div class="foot foot-l"></div><div class="foot foot-r"></div>
+            </div>
+            <div class="key-guide">F / ←</div>
+        </div>
+        <div class="char-wrapper" id="char-right">
+            <div class="waddle">
+                <div class="heart-tag"></div>
+                <div class="face"></div><div class="bandaid-blue"></div>
+                <div class="foot foot-l"></div><div class="foot foot-r"></div>
+            </div>
+            <div class="key-guide">J / →</div>
+        </div>
+    </div>
+
+    <div id="start-screen">
+        <h1>★ カービィ・リズム ★</h1>
+        <p>なんいど を えらんでね！<br>（30びょう で おわるよ）</p>
+        <div class="btn-group">
+            <button class="btn-easy" onclick="gameStart('easy')">かんたん</button>
+            <button class="btn-normal" onclick="gameStart('normal')">ふつう</button>
+            <button class="btn-hard" onclick="gameStart('hard')">むずかしい</button>
+        </div>
+    </div>
+
+    <div id="result-screen">
+        <h2>GAME OVER</h2>
+        <div id="final-score-area"></div>
+        <div class="ranking-list" id="ranking-list"></div>
+        <button class="btn-retry" onclick="location.reload()">もういちど</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let cw, ch;
+    function resize() {
+        const container = document.getElementById('game-container');
+        cw = container.clientWidth; ch = container.clientHeight;
+        canvas.width = cw; canvas.height = ch;
+    }
+    window.addEventListener('resize', resize); resize();
+
+    const LANE_LEFT = 0; const LANE_RIGHT = 1;
+    const JUDGE_Y_OFFSET = 120;
+    let JUDGE_Y = ch - JUDGE_Y_OFFSET;
+    
+    let isPlaying = false;
+    let startTime = 0;
+    let score = 0;
+    let combo = 0;
+    let notes = [];
+    
+    // 30秒制限
+    const GAME_DURATION = 30000;
+    let endTime = 0;
+    
+    const BPM = 120;
+    const BEAT_INTERVAL = 60000 / BPM; 
+    let nextNoteTime = 0;
+    let beatCount = 0;
+
+    // 難易度パラメータ
+    let currentDifficulty = 'normal';
+    let spawnSpeed = 0; // ピクセル/フレーム
+    let doubleChance = 0; // 同時押しの確率
+    let subBeatChance = 0; // 裏拍の確率
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+    function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        if (type === 'hit_left') {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(1000, t); osc.frequency.exponentialRampToValueAtTime(2000, t + 0.1);
+            gain.gain.setValueAtTime(0.3, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(t + 0.3);
+        } else if (type === 'hit_right') {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'square'; osc.frequency.setValueAtTime(150, t); osc.frequency.exponentialRampToValueAtTime(50, t + 0.1);
+            gain.gain.setValueAtTime(0.3, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(t + 0.3);
+        } else if (type === 'miss') {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, t); gain.gain.setValueAtTime(0.2, t); gain.gain.linearRampToValueAtTime(0, t + 0.2);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(t + 0.3);
+        } else if (type === 'bgm_beat') {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(120, t); gain.gain.setValueAtTime(0.2, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(t + 0.3);
+        } else if (type === 'bgm_melody') {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'triangle'; 
+            const notes = [523, 659, 783, 1046]; 
+            const freq = notes[Math.floor(Math.random() * notes.length)];
+            osc.frequency.setValueAtTime(freq, t); gain.gain.setValueAtTime(0.05, t); gain.gain.linearRampToValueAtTime(0, t + 0.1);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(t + 0.3);
+        }
+    }
+
+    function playEndingMusic(type) {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        if (type === 'high_score') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(783, t); gain.gain.setValueAtTime(0.1, t); gain.gain.setValueAtTime(0, t + 0.1);
+            osc.frequency.setValueAtTime(783, t + 0.15); gain.gain.setValueAtTime(0.1, t + 0.15); gain.gain.setValueAtTime(0, t + 0.25);
+            osc.frequency.setValueAtTime(783, t + 0.3); gain.gain.setValueAtTime(0.1, t + 0.3); gain.gain.setValueAtTime(0, t + 0.4);
+            osc.frequency.setValueAtTime(1046, t + 0.45); gain.gain.setValueAtTime(0.2, t + 0.45); gain.gain.exponentialRampToValueAtTime(0.01, t + 2.0);
+            osc.start(t); osc.stop(t + 2.0);
+        } else {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1046, t); gain.gain.setValueAtTime(0.1, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+            osc.frequency.setValueAtTime(987, t + 0.5); gain.gain.setValueAtTime(0.1, t + 0.5); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.9);
+            osc.frequency.setValueAtTime(783, t + 1.0); gain.gain.setValueAtTime(0.1, t + 1.0); gain.gain.exponentialRampToValueAtTime(0.01, t + 1.4);
+            osc.frequency.setValueAtTime(523, t + 1.5); gain.gain.setValueAtTime(0.1, t + 1.5); gain.gain.exponentialRampToValueAtTime(0.001, t + 4.0);
+            osc.start(t); osc.stop(t + 4.0);
+        }
+    }
+
+    function gameStart(difficulty) {
+        initAudio();
+        currentDifficulty = difficulty;
+        document.getElementById('start-screen').style.display = 'none';
+        
+        // 難易度設定
+        const modeText = { 'easy': 'かんたん', 'normal': 'ふつう', 'hard': 'むずかしい' };
+        document.getElementById('mode-display').innerText = `モード: ${modeText[difficulty]}`;
+
+        if (difficulty === 'easy') {
+            spawnSpeed = ch / 120; // 遅い
+            doubleChance = 0;      // 同時押しなし
+            subBeatChance = 0;     // 裏拍なし
+        } else if (difficulty === 'normal') {
+            spawnSpeed = ch / 90;  // 普通
+            doubleChance = 0.1;    // たまに同時
+            subBeatChance = 0.2;   // たまに裏
+        } else { // hard
+            spawnSpeed = ch / 70;  // 速い
+            doubleChance = 0.3;    // よくある
+            subBeatChance = 0.5;   // よくある
+        }
+
+        isPlaying = true;
+        score = 0; combo = 0; notes = [];
+        startTime = Date.now();
+        endTime = startTime + GAME_DURATION;
+        nextNoteTime = startTime + 1000;
+        updateScore();
+        loop();
+    }
+
+    function gameEnd() { isPlaying = false; showResult(); }
+
+    function showResult() {
+        const screen = document.getElementById('result-screen');
+        const scoreArea = document.getElementById('final-score-area');
+        const rankList = document.getElementById('ranking-list');
+        screen.style.display = 'flex';
+        
+        // 難易度ごとに保存キーを変える
+        const storageKey = `kirby_rhythm_rank_${currentDifficulty}`;
+        let ranking = JSON.parse(localStorage.getItem(storageKey)) || [];
+        ranking.push(score); ranking.sort((a, b) => b - a); ranking = ranking.slice(0, 5);
+        localStorage.setItem(storageKey, JSON.stringify(ranking));
+
+        let isNewRecord = (score === ranking[0] && score > 0);
+        if (isNewRecord) playEndingMusic('high_score');
+        else playEndingMusic('normal');
+
+        let html = '';
+        if (isNewRecord) html += '<div class="new-record">★ NEW RECORD! ★</div>';
+        html += `<h1>SCORE: ${score}</h1>`;
+        scoreArea.innerHTML = html;
+
+        let listHtml = '';
+        ranking.forEach((s, i) => {
+            let color = i === 0 ? '#FFD700' : (i === 1 ? '#C0C0C0' : (i === 2 ? '#CD7F32' : '#FFF'));
+            listHtml += `<div class="ranking-item"><span class="rank-num" style="color:${color}">${i+1}</span><span class="rank-score">${s}</span></div>`;
+        });
+        rankList.innerHTML = listHtml;
+    }
+
+    function loop() {
+        if (!isPlaying) return;
+        const now = Date.now();
+        JUDGE_Y = ch - JUDGE_Y_OFFSET;
+
+        let remain = Math.max(0, Math.ceil((endTime - now) / 1000));
+        document.getElementById('time-board').innerText = `TIME: ${remain}`;
+        if (now >= endTime) { gameEnd(); return; }
+
+        if (now >= nextNoteTime) {
+            spawnNote();
+            playSound('bgm_beat');
+            if (beatCount % 2 === 0) playSound('bgm_melody');
+            beatCount++;
+            nextNoteTime += BEAT_INTERVAL;
+            
+            // 裏拍ノーツ（難易度依存）
+            if (Math.random() < subBeatChance) {
+                 setTimeout(() => { if(isPlaying) { spawnNote(); playSound('bgm_melody'); } }, BEAT_INTERVAL / 2);
+            }
+        }
+
+        ctx.clearRect(0, 0, cw, ch);
+        
+        for (let i = 0; i < notes.length; i++) {
+            let n = notes[i];
+            if (!n.active) continue;
+            n.y += spawnSpeed;
+            drawStar(n.lane, n.y);
+            if (n.y > JUDGE_Y + 50 && !n.hit) { n.active = false; judgeResult('MISS'); }
+        }
+        requestAnimationFrame(loop);
+    }
+
+    function spawnNote() {
+        const r = Math.random();
+        let lanes = [];
+        
+        // 同時押し判定（難易度依存）
+        if (r < doubleChance) {
+            lanes = [LANE_LEFT, LANE_RIGHT];
+        } else {
+            // 片方だけ
+            if (Math.random() < 0.5) lanes = [LANE_LEFT];
+            else lanes = [LANE_RIGHT];
+        }
+
+        lanes.forEach(l => { notes.push({ lane: l, y: -50, active: true, hit: false }); });
+    }
+
+    function drawStar(lane, y) {
+        const x = lane === LANE_LEFT ? cw * 0.25 : cw * 0.75; const size = 30;
+        ctx.save(); ctx.translate(x, y);
+        ctx.fillStyle = lane === LANE_LEFT ? '#FFB7C5' : '#FFD700';
+        ctx.shadowBlur = 10; ctx.shadowColor = 'white';
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            ctx.lineTo(Math.cos((18 + i * 72) * Math.PI / 180) * size, -Math.sin((18 + i * 72) * Math.PI / 180) * size);
+            ctx.lineTo(Math.cos((54 + i * 72) * Math.PI / 180) * (size / 2), -Math.sin((54 + i * 72) * Math.PI / 180) * (size / 2));
+        }
+        ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+
+    function handleInput(lane) {
+        if (!isPlaying) return;
+        const charId = lane === LANE_LEFT ? 'char-left' : 'char-right';
+        const charEl = document.getElementById(charId);
+        charEl.classList.remove('hit-anim'); void charEl.offsetWidth; charEl.classList.add('hit-anim');
+
+        if (lane === LANE_LEFT) playSound('hit_left'); else playSound('hit_right');
+
+        let targetNote = null; let minDist = 9999;
+        for (let n of notes) {
+            if (n.active && !n.hit && n.lane === lane) {
+                const dist = Math.abs(n.y - JUDGE_Y);
+                if (dist < minDist) { minDist = dist; targetNote = n; }
+            }
+        }
+        if (targetNote && minDist < 80) {
+            targetNote.active = false; targetNote.hit = true;
+            if (minDist < 20) judgeResult('PERFECT'); else if (minDist < 50) judgeResult('GOOD'); else judgeResult('OK');
+        }
+    }
+
+    function judgeResult(type) {
+        const jText = document.createElement('div');
+        jText.className = 'judge-text'; jText.innerText = type;
+        if (type === 'MISS') { jText.style.color = '#888'; combo = 0; playSound('miss'); }
+        else {
+            if (type === 'PERFECT') { jText.style.color = '#FFD700'; score += 500; }
+            else if (type === 'GOOD') { jText.style.color = '#00FFFF'; score += 300; }
+            else { jText.style.color = '#FFF'; score += 100; }
+            combo++;
+        }
+        document.querySelector('.ui-layer').appendChild(jText);
+        setTimeout(() => jText.remove(), 500);
+        updateScore();
+    }
+
+    function updateScore() {
+        document.getElementById('score-board').innerText = `SCORE: ${score}`;
+        const cDisp = document.getElementById('combo-display');
+        if (combo > 1) { cDisp.innerText = `${combo} COMBO`; cDisp.style.opacity = 1; cDisp.style.transform = 'scale(1.2)'; setTimeout(() => cDisp.style.transform = 'scale(1)', 100); }
+        else { cDisp.style.opacity = 0; }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'f' || e.key === 'ArrowLeft') handleInput(LANE_LEFT);
+        if (e.key === 'j' || e.key === 'ArrowRight') handleInput(LANE_RIGHT);
+    });
+    document.getElementById('game-container').addEventListener('pointerdown', (e) => {
+        if (e.clientX < window.innerWidth / 2) handleInput(LANE_LEFT);
+        else handleInput(LANE_RIGHT);
+    });
+</script>
+</body>
+</html>
