@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>カービィの算数（効果音のみ）</title>
+    <style>
+        /* --- デザイン（リアル風のまま） --- */
+        body {
+            font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+            background-color: #333; margin: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; height: 100vh; overflow: hidden; user-select: none;
+        }
+        #game-container {
+            position: relative; width: 800px; height: 500px;
+            background: linear-gradient(#87CEEB 60%, #90EE90 60%);
+            border: 8px solid #fff; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            overflow: hidden; text-align: center; transition: background 1s ease;
+        }
+        h1 { color: #fff; text-shadow: 2px 2px 0 #FF69B4; margin-top: 15px; font-size: 28px; position: relative; z-index: 5; }
+        #score-board {
+            position: absolute; top: 20px; right: 30px; background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px; border-radius: 15px; font-size: 24px; font-weight: bold;
+            color: #FF1493; border: 3px solid #FFB6C1; z-index: 5;
+        }
+        .stage {
+            position: absolute; bottom: 40px; width: 100%; height: 200px;
+            display: flex; justify-content: space-around; align-items: flex-end;
+        }
+
+        /* カービィ（リアル） */
+        .kirby {
+            width: 100px; height: 90px;
+            background: radial-gradient(circle at 30% 30%, #FFB7C5, #FF9EAA);
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.15), 2px 2px 5px rgba(0,0,0,0.2);
+            border-radius: 50%; position: absolute; bottom: 50px; left: 80px; transition: transform 0.2s; z-index: 10;
+        }
+        .kirby::before, .kirby::after { content: ''; position: absolute; top: 25px; width: 8px; height: 20px; background: #000; border-radius: 50%; box-shadow: inset 2px 2px 2px rgba(255,255,255,0.5); }
+        .kirby::before { left: 30px; } .kirby::after { right: 30px; }
+        .kirby .cheeks { position: absolute; top: 45px; width: 100%; }
+        .kirby .cheeks::before, .kirby .cheeks::after { content: ''; position: absolute; width: 15px; height: 8px; background: #FF69B4; border-radius: 50%; opacity: 0.5; filter: blur(2px); }
+        .kirby .cheeks::before { left: 15px; } .kirby .cheeks::after { right: 15px; }
+        .kirby .mouth { position: absolute; top: 55px; left: 45px; width: 10px; height: 10px; background: #990000; border-radius: 50%; box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5); }
+        .foot { position: absolute; bottom: -10px; width: 40px; height: 25px; background: radial-gradient(circle at 40% 40%, #D63545, #B22222); border-radius: 20px; z-index: -1; box-shadow: inset -3px -3px 5px rgba(0,0,0,0.2); }
+        .kirby .foot-l { left: 0; } .kirby .foot-r { right: 0; }
+        .kirby .candy { position: absolute; top: -20px; left: -10px; transform: rotate(-20deg); filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3)); }
+        .kirby .candy-stick { width: 6px; height: 40px; background: #f0f0f0; border-radius: 3px; position: absolute; top: 20px; left: 12px; }
+        .kirby .candy-head { width: 30px; height: 30px; background: radial-gradient(circle, #FF6347 20%, #FFD700 21%, #FFD700 40%, #FF6347 41%); border-radius: 50%; position: absolute; top: 0; left: 0; }
+        .kirby .bandaid { position: absolute; top: 50px; right: 10px; width: 25px; height: 10px; background: #FFC0CB; border-radius: 5px; transform: rotate(10deg); background-image: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,20,147,0.3) 2px, rgba(255,20,147,0.3) 4px); box-shadow: 1px 1px 3px rgba(0,0,0,0.2); }
+        .kirby.jump { animation: jump-anim 0.5s ease; }
+        @keyframes jump-anim { 0% { bottom: 50px; transform: scale(1,1); } 50% { bottom: 150px; transform: scale(1.1, 0.9); } 100% { bottom: 50px; transform: scale(1,1); } }
+
+        /* ワドルディ（リアル） */
+        .waddle { width: 90px; height: 80px; background: radial-gradient(circle at 70% 30%, #F4A460, #D2691E); box-shadow: inset 5px -5px 15px rgba(0,0,0,0.15), 2px 2px 5px rgba(0,0,0,0.2); border-radius: 50%; position: absolute; bottom: 50px; right: 80px; }
+        .waddle .face { position: absolute; top: 10px; left: 10px; width: 70px; height: 60px; background: radial-gradient(ellipse at center, #FFF8DC, #FFE4C4); border-radius: 50% 50% 40% 40%; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); }
+        .waddle .face::before, .waddle .face::after { content: ''; position: absolute; top: 20px; width: 6px; height: 15px; background: #000; border-radius: 50%; box-shadow: inset 1px 1px 2px rgba(255,255,255,0.6); }
+        .waddle .face::before { left: 20px; } .waddle .face::after { right: 20px; }
+        .waddle .foot { position: absolute; bottom: -8px; width: 30px; height: 20px; background: radial-gradient(circle at 40% 40%, #FFD700, #DAA520); border-radius: 20px; z-index: -1; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.2); }
+        .waddle .foot-l { left: 5px; } .waddle .foot-r { right: 5px; }
+        .waddle .heart-tag { position: absolute; top: -10px; left: -25px; width: 40px; height: 40px; transform: rotate(-30deg); filter: drop-shadow(3px 3px 3px rgba(0,0,0,0.3)); }
+        .waddle .heart-shape { position: relative; width: 100%; height: 100%; }
+        .waddle .heart-shape::before, .waddle .heart-shape::after { content: ""; position: absolute; top: 0; width: 24px; height: 36px; border-radius: 24px 24px 0 0; background: linear-gradient(to bottom right, #FF69B4, #FFD700, #87CEEB); }
+        .waddle .heart-shape::before { left: 24px; transform: rotate(-45deg); transform-origin: 0 100%; } .waddle .heart-shape::after { left: 0; transform: rotate(45deg); transform-origin: 100% 100%; }
+        .waddle .bandaid-blue { position: absolute; top: 45px; right: 15px; width: 22px; height: 9px; background: #ADD8E6; border-radius: 4px; transform: rotate(5deg); background-image: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,255,0.3) 3px, rgba(0,0,255,0.3) 6px); box-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+
+        /* UI周り */
+        #question-board { position: absolute; bottom: 140px; right: 130px; background: white; padding: 10px 20px; border: 4px solid #8B4513; border-radius: 10px; font-size: 40px; font-weight: bold; color: #333; transform: rotate(-5deg); box-shadow: 2px 2px 5px rgba(0,0,0,0.2); }
+        .answers-area { position: absolute; top: 80px; left: 0; right: 0; margin: auto; width: 600px; display: flex; justify-content: space-around; z-index: 5; }
+        .star-btn { width: 90px; height: 90px; background: #FFD700; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; color: #D2691E; cursor: pointer; transition: transform 0.2s; filter: drop-shadow(0 4px 0 #DAA520); position: relative; }
+        .star-btn:nth-child(1) { transform: rotate(-10deg); } .star-btn:nth-child(2) { transform: rotate(5deg); top: -20px; } .star-btn:nth-child(3) { transform: rotate(10deg); }
+        .star-btn:hover { transform: scale(1.1) rotate(0deg); z-index: 100; } .star-btn:active { transform: scale(0.9); }
+        #message { position: absolute; top: 220px; left: 0; width: 100%; text-align: center; font-size: 45px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); display: none; z-index: 100; }
+        .correct { color: #FF4500; } .wrong { color: #1E90FF; }
+        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: white; }
+        #reward-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 300; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .reward-content { text-align: center; background: #fff; padding: 40px; border-radius: 30px; border: 8px solid #FFD700; box-shadow: 0 0 30px rgba(255, 215, 0, 0.5); }
+        .reward-emoji { font-size: 100px; margin: 20px 0; animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        button { padding: 15px 40px; font-size: 24px; background: #FF69B4; color: white; border: none; border-radius: 50px; cursor: pointer; border-bottom: 5px solid #C71585; margin-top: 20px; }
+        button:active { border-bottom: 2px solid #C71585; transform: translateY(3px); }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>カービィの算数★</h1>
+    <div id="score-board">★ 0</div>
+    <div class="answers-area">
+        <div class="star-btn" id="ans0" onclick="checkAnswer(0)">?</div>
+        <div class="star-btn" id="ans1" onclick="checkAnswer(1)">?</div>
+        <div class="star-btn" id="ans2" onclick="checkAnswer(2)">?</div>
+    </div>
+    <div id="message"></div>
+
+    <div class="stage">
+        <div class="kirby" id="kirby">
+            <div class="candy"><div class="candy-head"></div><div class="candy-stick"></div></div>
+            <div class="cheeks"></div><div class="bandaid"></div><div class="mouth"></div>
+            <div class="foot foot-l"></div><div class="foot foot-r"></div>
+        </div>
+        <div class="waddle">
+            <div class="heart-tag"><div class="heart-shape"></div></div>
+            <div class="face"></div><div class="bandaid-blue"></div>
+            <div class="foot foot-l"></div><div class="foot foot-r"></div>
+        </div>
+        <div id="question-board">?</div>
+    </div>
+
+    <div id="start-screen">
+        <h2>★ カービィとさんすう ★</h2>
+        <p>BGMと効果音がでるよ！</p>
+        <button onclick="startGame()">スタート！</button>
+    </div>
+
+    <div id="reward-screen">
+        <div class="reward-content">
+            <h2 id="reward-title">ごほうびゲット！</h2>
+            <div id="reward-icon" class="reward-emoji">🎁</div>
+            <p id="reward-text">やったね！</p>
+            <button onclick="closeReward()">つぎへ進む</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let score = 0;
+    let currentAnswer = 0;
+    let isPlaying = false;
+    let currentOptions = [];
+    
+    // --- 音響システム (Web Audio API) ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    // ビープ音生成関数
+    function playTone(freq, type, duration, vol = 0.1, rampTo = 0.01) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(rampTo, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // --- かわいい効果音セット ---
+    // ジャンプ音
+    function sfxJump() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine'; 
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.15); 
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+    }
+
+    // 正解音
+    function sfxCorrect() {
+        let notes = [1046, 1318, 1568, 2093]; 
+        let time = 0;
+        notes.forEach(f => {
+            setTimeout(() => playTone(f, 'sine', 0.3, 0.05), time);
+            time += 60; 
+        });
+    }
+
+    // 不正解音
+    function sfxWrong() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle'; 
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.4); 
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    // BGM（スタート時）
+    function bgmStart() {
+        let time = 0;
+        [880, 0, 880, 1174, 1318, 1760].forEach((f, i) => { 
+            if(f > 0) setTimeout(() => playTone(f, 'sine', 0.15, 0.05), time);
+            time += 150;
+        });
+    }
+
+    // BGM（ご褒美）
+    function bgmReward() {
+        let notes = [1046, 1318, 1568, 2093, 1568, 2093]; 
+        let times = [0, 150, 300, 450, 600, 750];
+        notes.forEach((f, i) => {
+            setTimeout(() => playTone(f, 'sine', 0.5, 0.08), times[i]);
+        });
+    }
+
+    // --- ゲームロジック ---
+    function startGame() {
+        initAudio(); // 音の準備
+        bgmStart();
+        document.getElementById('start-screen').style.display = 'none';
+        score = 0;
+        updateScore();
+        setTimeout(nextQuestion, 1200); 
+        isPlaying = true;
+    }
+
+    function updateScore() {
+        document.getElementById('score-board').innerText = '★ ' + score;
+    }
+
+    function nextQuestion() {
+        const msgEl = document.getElementById('message');
+        msgEl.style.display = 'none';
+
+        // 問題作成
+        let type = Math.floor(Math.random() * 3); 
+        let num1, num2, qText;
+
+        if (type === 0) {
+            num1 = Math.floor(Math.random() * 10) + 1;
+            num2 = Math.floor(Math.random() * 10) + 1;
+            currentAnswer = num1 + num2;
+            qText = `${num1} + ${num2}`;
+        } else if (type === 1) {
+            num1 = Math.floor(Math.random() * 10) + 1;
+            num2 = Math.floor(Math.random() * 10) + 1;
+            if (num1 < num2) { let temp = num1; num1 = num2; num2 = temp; }
+            currentAnswer = num1 - num2;
+            qText = `${num1} - ${num2}`;
+        } else {
+            num1 = Math.floor(Math.random() * 9) + 1;
+            num2 = Math.floor(Math.random() * 9) + 1;
+            currentAnswer = num1 * num2;
+            qText = `${num1} × ${num2}`;
+        }
+
+        document.getElementById('question-board').innerText = qText;
+
+        // 選択肢作成
+        let options = [currentAnswer];
+        while (options.length < 3) {
+            let diff = Math.floor(Math.random() * 11) - 5; 
+            if (diff === 0) diff = 1;
+            let fake = currentAnswer + diff;
+            if (fake >= 0 && !options.includes(fake)) {
+                options.push(fake);
+            }
+        }
+        shuffleArray(options);
+        currentOptions = options;
+
+        for(let i=0; i<3; i++) {
+            document.getElementById('ans' + i).innerText = options[i];
+        }
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function checkAnswer(index) {
+        if (!isPlaying) return;
+
+        let selectedVal = currentOptions[index];
+        const msgEl = document.getElementById('message');
+
+        if (selectedVal === currentAnswer) {
+            // 正解
+            score++;
+            updateScore();
+            sfxCorrect(); 
+            
+            msgEl.innerText = "せいかい！";
+            msgEl.className = "correct";
+            msgEl.style.display = 'block';
+            
+            const kirby = document.getElementById('kirby');
+            kirby.classList.remove('jump');
+            void kirby.offsetWidth;
+            kirby.classList.add('jump');
+            sfxJump(); 
+
+            if (score > 0 && score % 10 === 0) {
+                setTimeout(() => showReward(score), 1000);
+            } else {
+                setTimeout(nextQuestion, 1200); 
+            }
+
+        } else {
+            // 不正解
+            sfxWrong(); 
+            
+            msgEl.innerText = "おしい！";
+            msgEl.className = "wrong";
+            msgEl.style.display = 'block';
+        }
+    }
+
+    function showReward(currentScore) {
+        isPlaying = false;
+        bgmReward(); 
+        
+        const rewardScreen = document.getElementById('reward-screen');
+        const rTitle = document.getElementById('reward-title');
+        const rIcon = document.getElementById('reward-icon');
+        const rText = document.getElementById('reward-text');
+        const container = document.getElementById('game-container');
+
+        if (currentScore === 10) {
+            rTitle.innerText = "10もん クリア！"; rIcon.innerText = "🍎"; 
+            rText.innerText = "りんごを どうぞ！";
+            container.style.background = "linear-gradient(#FFB7C5 60%, #90EE90 60%)";
+        } else if (currentScore === 20) {
+            rTitle.innerText = "20もん クリア！"; rIcon.innerText = "🍭"; 
+            rText.innerText = "あまい キャンディ！";
+            container.style.background = "linear-gradient(#8A2BE2 60%, #3CB371 60%)";
+        } else if (currentScore === 30) {
+            rTitle.innerText = "30もん クリア！"; rIcon.innerText = "🌟"; 
+            rText.innerText = "きらきら ワープスター！";
+            container.style.background = "linear-gradient(#191970 60%, #2F4F4F 60%)";
+        } else if (currentScore === 40) {
+            rTitle.innerText = "40もん クリア！"; rIcon.innerText = "💎"; 
+            rText.innerText = "きれいな ほうせき！";
+            container.style.background = "linear-gradient(#FFD700 60%, #DAA520 60%)";
+        } else if (currentScore >= 50) {
+            rTitle.innerText = "すごすぎる！！"; rIcon.innerText = "👑"; 
+            rText.innerText = "さんすうマスター だね！";
+            container.style.background = "linear-gradient(to right, #f8b500, #fceabb)";
+        }
+        rewardScreen.style.display = 'flex';
+    }
+
+    function closeReward() {
+        document.getElementById('reward-screen').style.display = 'none';
+        isPlaying = true;
+        nextQuestion();
+    }
+</script>
+
+</body>
+</html>
